@@ -6,8 +6,9 @@ import { Mail, Lock } from 'lucide-react';
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (event) => {
@@ -25,6 +26,24 @@ export default function Login() {
       navigate('/');
     } catch (err) {
       setError('Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!form.email) {
+      setError('Please enter your email address first.');
+      return;
+    }
+    try {
+      setLoading(true);
+      setError('');
+      setResetMessage('');
+      await resetPassword(form.email);
+      setResetMessage('Password reset email sent. Check your inbox.');
+    } catch (err) {
+      setError('Failed to send password reset email. Make sure your email is correct.');
     } finally {
       setLoading(false);
     }
@@ -57,7 +76,16 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-sm font-medium text-red-600 hover:text-red-700"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
                 <input
@@ -74,6 +102,10 @@ export default function Login() {
 
             {error && (
               <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</div>
+            )}
+
+            {resetMessage && (
+              <div className="rounded-lg bg-green-50 p-3 text-sm text-green-800">{resetMessage}</div>
             )}
 
             <button

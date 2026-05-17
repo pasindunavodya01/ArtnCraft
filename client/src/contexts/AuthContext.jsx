@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebaseConfig.js';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import api, { setAuthToken } from '../services/api.js';
 
 const AuthContext = createContext();
@@ -31,6 +31,15 @@ export function AuthProvider({ children }) {
             localStorage.setItem(`role:${currentUser.email}`, resolvedRole);
           } catch (err) {
             console.warn('Unable to fetch role from /auth/me:', err);
+            if (err.response?.status === 404) {
+              await signOut(auth);
+              setUser(null);
+              setRole('customer');
+              localStorage.removeItem('ecommerce-api-token');
+              setAuthToken(null);
+              setLoading(false);
+              return;
+            }
           }
         }
 
@@ -73,8 +82,27 @@ export function AuthProvider({ children }) {
     localStorage.setItem('ecommerce-api-token', token);
     setAuthToken(token);
 
-    const response = await api.get('/auth/me');
-    const loginRole = response.data.user?.role || 'customer';
+    let loginRole = 'customer';
+    try {
+      const response = await api.get('/auth/me');
+      loginRole = response.data.user?.role || 'customer';
+    } catch (err) {
+      if (err.response?.status === 404) {
+        try {
+          await api.post('/auth/register', {
+            name: result.user.displayName || email.split('@')[0],
+            email,
+            password,
+            role: 'customer'
+          });
+        } catch (regErr) {
+          console.warn('Failed to sync missing user with database:', regErr);
+        }
+      } else {
+        throw err;
+      }
+    }
+
     localStorage.setItem(`role:${email}`, loginRole);
     setRole(loginRole);
     setUser({ uid: result.user.uid, email: result.user.email, name: result.user.displayName || 'Guest' });
@@ -90,12 +118,16 @@ export function AuthProvider({ children }) {
     setAuthToken(null);
   };
 
+  const resetPassword = (email) => {
+    return sendPasswordResetEmail(auth, email);
+  };
+
   const updateUserProfile = (updates) => {
     setUser((prev) => ({ ...prev, ...updates }));
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, loading, register, login, logout, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, role, loading, register, login, logout, updateUserProfile, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
