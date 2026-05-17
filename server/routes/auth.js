@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = express.Router();
 
@@ -50,6 +51,41 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Login failed' });
+  }
+});
+
+router.get('/me', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.user.email }).select('name email role');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Unable to fetch user profile' });
+  }
+});
+
+router.put('/me', verifyToken, async (req, res) => {
+  try {
+    const { name, password } = req.body;
+    const updates = {};
+    if (name) updates.name = name;
+    if (password) updates.password = await bcrypt.hash(password, 10);
+    if (!Object.keys(updates).length) {
+      return res.status(400).json({ message: 'No profile changes provided' });
+    }
+
+    const user = await User.findOneAndUpdate({ email: req.user.email }, updates, { new: true }).select('name email role');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Unable to update profile' });
   }
 });
 

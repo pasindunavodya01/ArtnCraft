@@ -6,10 +6,12 @@ import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import reviewRoutes from './routes/reviews.js';
 import orderRoutes from './routes/orders.js';
+import { isFirebaseAdminAvailable } from './utils/firebaseAdmin.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ecommerce-demo';
+const STRIPE_KEY_STATUS = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET ? 'configured' : 'missing';
 
 app.use(cors());
 app.use(express.json());
@@ -34,4 +36,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Stripe secret key is ${STRIPE_KEY_STATUS}`);
+  console.log(`Firebase Admin is ${isFirebaseAdminAvailable() ? 'initialized' : 'not initialized'}`);
 });

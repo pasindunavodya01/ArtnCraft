@@ -12,6 +12,7 @@ import SellerProducts from './pages/SellerProducts.jsx';
 import StripeSuccess from './pages/StripeSuccess.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
+import Account from './pages/Account.jsx';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/account" element={<Account />} />
               <Route path="/stripe-success" element={<StripeSuccess />} />
             </Routes>
           </BrowserRouter>

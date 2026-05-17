@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api.js';
 import ProductCard from '../components/ProductCard.jsx';
 import { useCart } from '../contexts/CartContext.jsx';
@@ -10,14 +11,39 @@ export default function Homepage() {
   const [error, setError] = useState(null);
   const [productForm, setProductForm] = useState({ title: '', description: '', category: '', price: '', images: [] });
   const [success, setSuccess] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || '');
+  const [sellerFilter, setSellerFilter] = useState(searchParams.get('seller') || '');
+  const [priceFilter, setPriceFilter] = useState(searchParams.get('price') || '');
+  const [sortOrder, setSortOrder] = useState(searchParams.get('sort') || 'newest');
   const { addToCart } = useCart();
   const { role, user } = useAuth();
 
   useEffect(() => {
+    setSearchTerm(searchParams.get('search') || '');
+    setCategoryFilter(searchParams.get('category') || '');
+    setSellerFilter(searchParams.get('seller') || '');
+    setPriceFilter(searchParams.get('price') || '');
+    setSortOrder(searchParams.get('sort') || 'newest');
+  }, [searchParams]);
+
+  useEffect(() => {
     const loadProducts = async () => {
       try {
-        const response = await api.get('/products');
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (searchParams.get('search')) params.set('search', searchParams.get('search'));
+        if (searchParams.get('category')) params.set('category', searchParams.get('category'));
+        if (searchParams.get('seller')) params.set('seller', searchParams.get('seller'));
+        if (searchParams.get('price')) params.set('price', searchParams.get('price'));
+        if (searchParams.get('sort')) params.set('sort', searchParams.get('sort'));
+
+        const response = await api.get(`/products?${params.toString()}`);
         setProducts(response.data);
+        const categoryOptions = Array.from(new Set(response.data.map((product) => product.category || 'General'))).filter(Boolean).sort();
+        setCategories(categoryOptions);
       } catch (err) {
         setError('Unable to load products.');
       } finally {
@@ -25,9 +51,29 @@ export default function Homepage() {
       }
     };
     loadProducts();
-  }, []);
+  }, [searchParams]);
 
   const handleAdd = (product) => addToCart(product);
+
+  const handleFilterSubmit = (event) => {
+    event.preventDefault();
+    const params = {};
+    if (searchTerm.trim()) params.search = searchTerm.trim();
+    if (categoryFilter) params.category = categoryFilter;
+    if (sellerFilter.trim()) params.seller = sellerFilter.trim();
+    if (priceFilter) params.price = priceFilter;
+    if (sortOrder) params.sort = sortOrder;
+    setSearchParams(params);
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setCategoryFilter('');
+    setSellerFilter('');
+    setPriceFilter('');
+    setSortOrder('newest');
+    setSearchParams({});
+  };
 
   const handleInput = (event) => {
     const { name, value, files } = event.target;
@@ -170,9 +216,73 @@ export default function Homepage() {
 
         {/* Products Section */}
         <section id="products">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
-            <p className="mt-2 text-gray-600">Discover our best-selling items</p>
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
+              <p className="mt-2 text-gray-600">Discover our best-selling items</p>
+            </div>
+            <form onSubmit={handleFilterSubmit} className="grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr_1fr_1fr] w-full max-w-7xl">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search products or sellers"
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              />
+              <input
+                type="text"
+                value={sellerFilter}
+                onChange={(e) => setSellerFilter(e.target.value)}
+                placeholder="Seller email"
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              >
+                <option value="">All categories</option>
+                {categories.map((categoryOption) => (
+                  <option key={categoryOption} value={categoryOption}>{categoryOption}</option>
+                ))}
+              </select>
+              <select
+                value={priceFilter}
+                onChange={(e) => setPriceFilter(e.target.value)}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              >
+                <option value="">All prices</option>
+                <option value="0-50">$0 - $50</option>
+                <option value="50-100">$50 - $100</option>
+                <option value="100-200">$100 - $200</option>
+                <option value="200-500">$200 - $500</option>
+                <option value="500+">$500+</option>
+              </select>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              >
+                <option value="newest">Newest</option>
+                <option value="priceAsc">Price: low to high</option>
+                <option value="priceDesc">Price: high to low</option>
+              </select>
+              <div className="sm:col-span-1 flex gap-2">
+                <button
+                  type="submit"
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  Reset
+                </button>
+              </div>
+            </form>
           </div>
 
           {loading ? (

@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { Search, ShoppingCart, User } from 'lucide-react';
 import { useState } from 'react';
@@ -6,6 +6,15 @@ import { useState } from 'react';
 export default function Navbar() {
   const { user, role, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) {
+      params.set('search', searchQuery.trim());
+    }
+    navigate(`/?${params.toString()}`);
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md">
@@ -45,7 +54,7 @@ export default function Navbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-l-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
               />
-              <button className="rounded-r-md bg-red-600 px-6 py-2.5 text-white transition hover:bg-red-700 flex items-center gap-2">
+              <button onClick={handleSearch} className="rounded-r-md bg-red-600 px-6 py-2.5 text-white transition hover:bg-red-700 flex items-center gap-2">
                 <Search size={18} />
                 Search
               </button>
@@ -82,6 +91,14 @@ export default function Navbar() {
             {role === 'admin' && (
               <NavLink to="/admin" className={({ isActive }) => isActive ? "text-red-600 py-3 border-b-2 border-red-600" : "py-3 hover:text-red-600"}>
                 Admin Panel
+              </NavLink>
+            )}
+            {user && (
+              <NavLink to="/account" className={({ isActive }) => isActive ? 'text-red-600 py-3 border-b-2 border-red-600' : 'py-3 hover:text-red-600'}>
+                <div className="flex flex-col items-center gap-1 text-gray-700 transition hover:text-red-600">
+                  <User size={24} />
+                  <span className="text-xs font-semibold">Account</span>
+                </div>
               </NavLink>
             )}
             {user && (

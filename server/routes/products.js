@@ -26,14 +26,49 @@ const getUploadedImages = async (files) => {
 
 router.get('/', async (req, res) => {
   try {
-    const { sellerEmail } = req.query;
+    const { sellerEmail, category, search, price, sort } = req.query;
     const filter = {};
 
     if (sellerEmail) {
-      filter.sellerEmail = sellerEmail;
+      filter.sellerEmail = new RegExp(sellerEmail, 'i');
     }
 
-    const products = await Product.find(filter).sort({ createdAt: -1 });
+    if (category) {
+      filter.category = new RegExp(`^${category}$`, 'i');
+    }
+
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      filter.$or = [
+        { title: regex },
+        { description: regex },
+        { category: regex },
+        { sellerEmail: regex },
+      ];
+    }
+
+    if (price) {
+      if (price === '0-50') {
+        filter.price = { $gte: 0, $lte: 50 };
+      } else if (price === '50-100') {
+        filter.price = { $gte: 50, $lte: 100 };
+      } else if (price === '100-200') {
+        filter.price = { $gte: 100, $lte: 200 };
+      } else if (price === '200-500') {
+        filter.price = { $gte: 200, $lte: 500 };
+      } else if (price === '500+') {
+        filter.price = { $gte: 500 };
+      }
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'priceAsc') {
+      sortOption = { price: 1 };
+    } else if (sort === 'priceDesc') {
+      sortOption = { price: -1 };
+    }
+
+    const products = await Product.find(filter).sort(sortOption);
     const productIds = products.map((product) => product._id);
     const reviewSummary = await Review.aggregate([
       { $match: { productId: { $in: productIds } } },

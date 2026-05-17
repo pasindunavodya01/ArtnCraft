@@ -7,7 +7,8 @@ import cloudinary from '../utils/cloudinary.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET;
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 const uploadBuffer = (buffer) => {
   return new Promise((resolve, reject) => {
@@ -179,13 +180,30 @@ router.post('/stripe-confirm', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/customer', verifyToken, async (req, res) => {
+  try {
+    const orders = await Order.find({ customerEmail: req.user.email }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Unable to fetch customer orders' });
+  }
+});
+
 router.get('/seller', verifyToken, async (req, res) => {
   try {
     if (req.user.role !== 'seller') {
       return res.status(403).json({ message: 'Only sellers can access seller orders' });
     }
 
-    const orders = await Order.find({ 'items.sellerEmail': req.user.email }).sort({ createdAt: -1 });
+    const sellerEmail = req.user.email.toLowerCase();
+    const orders = await Order.find({
+      $or: [
+        { 'items.sellerEmail': sellerEmail },
+        { 'sellerApprovals.sellerEmail': sellerEmail }
+      ]
+    }).sort({ createdAt: -1 });
+
     res.json(orders);
   } catch (error) {
     console.error(error);
@@ -210,7 +228,16 @@ router.post('/:id/seller-approve', verifyToken, async (req, res) => {
       return res.status(400).json({ message: 'Only bank slip payments require seller approval' });
     }
 
-    const approval = order.sellerApprovals.find((a) => a.sellerEmail === req.user.email);
+    const lowerEmail = req.user.email.toLowerCase();
+    let approval = order.sellerApprovals.find((a) => a.sellerEmail?.toLowerCase() === lowerEmail);
+    if (!approval) {
+      const sellerItems = order.items.filter((item) => item.sellerEmail?.toLowerCase() === lowerEmail);
+      if (sellerItems.length > 0) {
+        approval = { sellerEmail: lowerEmail, status: approve === false ? 'rejected' : 'approved' };
+        order.sellerApprovals.push(approval);
+      }
+    }
+
     if (!approval) {
       return res.status(403).json({ message: 'No approval responsibility for this seller' });
     }

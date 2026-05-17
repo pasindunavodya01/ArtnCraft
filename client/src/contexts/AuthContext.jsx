@@ -5,36 +5,33 @@ import api, { setAuthToken } from '../services/api.js';
 
 const AuthContext = createContext();
 
-function decodeToken(token) {
-  if (!token) return null;
-  try {
-    const payload = token.split('.')[1];
-    const decoded = JSON.parse(window.atob(payload));
-    return decoded;
-  } catch (err) {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState('customer');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('ecommerce-api-token');
-    if (savedToken) {
-      setAuthToken(savedToken);
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const handleUserChange = async (currentUser) => {
       if (currentUser) {
-        const storedRole = localStorage.getItem(`role:${currentUser.email}`);
-        const tokenRole = savedToken ? decodeToken(savedToken)?.role : null;
-        const resolvedRole = storedRole || tokenRole || 'customer';
+        try {
+          const token = await currentUser.getIdToken();
+          localStorage.setItem('ecommerce-api-token', token);
+          setAuthToken(token);
+        } catch (err) {
+          console.error('Failed to get Firebase ID token:', err);
+        }
 
-        if (!storedRole && tokenRole) {
-          localStorage.setItem(`role:${currentUser.email}`, tokenRole);
+        const storedRole = localStorage.getItem(`role:${currentUser.email}`);
+        let resolvedRole = storedRole || 'customer';
+
+        if (!storedRole) {
+          try {
+            const response = await api.get('/auth/me');
+            resolvedRole = response.data.user?.role || 'customer';
+            localStorage.setItem(`role:${currentUser.email}`, resolvedRole);
+          } catch (err) {
+            console.warn('Unable to fetch role from /auth/me:', err);
+          }
         }
 
         setUser({ uid: currentUser.uid, email: currentUser.email, name: currentUser.displayName || 'Guest' });
@@ -42,8 +39,14 @@ export function AuthProvider({ children }) {
       } else {
         setUser(null);
         setRole('customer');
+        localStorage.removeItem('ecommerce-api-token');
+        setAuthToken(null);
       }
       setLoading(false);
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      handleUserChange(currentUser);
     });
 
     return () => unsubscribe();
@@ -52,23 +55,25 @@ export function AuthProvider({ children }) {
   const register = async ({ name, email, password, role: selectedRole }) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName: name });
+
+    const token = await result.user.getIdToken();
+    localStorage.setItem('ecommerce-api-token', token);
+    setAuthToken(token);
     localStorage.setItem(`role:${email}`, selectedRole);
     setRole(selectedRole);
     setUser({ uid: result.user.uid, email: result.user.email, name });
 
-    const response = await api.post('/auth/register', { name, email, password, role: selectedRole });
-    localStorage.setItem('ecommerce-api-token', response.data.token);
-    setAuthToken(response.data.token);
-
+    await api.post('/auth/register', { name, email, password, role: selectedRole });
     return result.user;
   };
 
   const login = async ({ email, password }) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    const response = await api.post('/auth/login', { email, password });
-    localStorage.setItem('ecommerce-api-token', response.data.token);
-    setAuthToken(response.data.token);
+    const token = await result.user.getIdToken();
+    localStorage.setItem('ecommerce-api-token', token);
+    setAuthToken(token);
 
+    const response = await api.get('/auth/me');
     const loginRole = response.data.user?.role || 'customer';
     localStorage.setItem(`role:${email}`, loginRole);
     setRole(loginRole);
@@ -85,8 +90,12 @@ export function AuthProvider({ children }) {
     setAuthToken(null);
   };
 
+  const updateUserProfile = (updates) => {
+    setUser((prev) => ({ ...prev, ...updates }));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, role, loading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, role, loading, register, login, logout, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );
