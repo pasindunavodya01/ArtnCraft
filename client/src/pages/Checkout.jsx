@@ -1,0 +1,147 @@
+import { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useCart } from '../contexts/CartContext.jsx';
+import api from '../services/api.js';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { MapPin, Package } from 'lucide-react';
+
+export default function Checkout() {
+  const { cart, total, clearCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [address, setAddress] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+
+    if (!address) {
+      setError('Please enter a delivery address.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const order = {
+        items: cart.map((item) => ({ productId: item._id, title: item.title, quantity: item.quantity, price: item.price })),
+        total,
+        address
+      };
+      await api.post('/orders/checkout', order);
+      clearCart();
+      setSuccess('Your order has been placed successfully!');
+      setTimeout(() => navigate('/'), 1800);
+    } catch (err) {
+      setError('Checkout failed. Make sure you are logged in and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
+        <p className="mt-2 text-gray-600">Review your order and complete your purchase</p>
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-3">
+          {/* Checkout Form */}
+          <div className="lg:col-span-2">
+            <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white p-8 shadow-md">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900 mb-6">
+                <MapPin size={24} className="text-red-600" />
+                Shipping Address
+              </h2>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Enter your complete delivery address
+                </label>
+                <textarea
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  rows="5"
+                  placeholder="Street address, city, state, postal code"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 flex gap-2">
+                  <span>⚠</span>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {success && (
+                <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-800 flex gap-2">
+                  <span>✓</span>
+                  <span>{success}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-6 w-full rounded-lg bg-red-600 px-6 py-3 font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+              >
+                {loading ? 'Processing...' : 'Place Order'}
+              </button>
+            </form>
+          </div>
+
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md sticky top-24">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900 mb-4">
+                <Package size={24} className="text-red-600" />
+                Order Summary
+              </h2>
+
+              <div className="space-y-3 border-b border-gray-200 pb-4">
+                {cart.map((item) => (
+                  <div key={item._id} className="flex gap-2">
+                    <img src={item.imageUrl} alt={item.title} className="h-12 w-12 rounded object-cover" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{item.title}</p>
+                      <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+                    </div>
+                    <p className="font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 space-y-2 border-b border-gray-200 pb-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium text-gray-900">${total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="font-medium text-gray-900">Free</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Tax</span>
+                  <span className="font-medium text-gray-900">${(total * 0.1).toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-between">
+                <span className="font-bold text-gray-900">Total</span>
+                <span className="text-2xl font-bold text-red-600">${(total * 1.1).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

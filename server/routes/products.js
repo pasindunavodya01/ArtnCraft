@@ -28,7 +28,7 @@ router.post('/upload', verifyToken, upload.single('image'), async (req, res) => 
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const uploadResult = await cloudinary.uploader.upload_stream({ folder: 'ecommerce-products' }, async (error, result) => {
+    const uploadStream = cloudinary.uploader.upload_stream({ folder: 'ecommerce-products' }, async (error, result) => {
       if (error) {
         console.error(error);
         return res.status(500).json({ message: 'Image upload failed' });
@@ -46,10 +46,31 @@ router.post('/upload', verifyToken, upload.single('image'), async (req, res) => 
       res.status(201).json(product);
     });
 
-    uploadResult.end(req.file.buffer);
+    uploadStream.end(req.file.buffer);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Product creation failed' });
+  }
+});
+
+router.delete('/:id', verifyToken, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Check if user is the seller or admin
+    if (product.sellerEmail !== req.user.email && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to delete this product' });
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to delete product' });
   }
 });
 

@@ -59,11 +59,21 @@ APP/
 ## Environment Variables
 
 ### Client (.env)
-- `VITE_API_URL=http://localhost:5000` - API base URL
+- `VITE_API_URL=http://localhost:5000/api` - API base URL
+- `VITE_FIREBASE_API_KEY` - Firebase web API key
+- `VITE_FIREBASE_AUTH_DOMAIN` - Firebase auth domain
+- `VITE_FIREBASE_PROJECT_ID` - Firebase project ID
+- `VITE_FIREBASE_STORAGE_BUCKET` - Firebase storage bucket
+- `VITE_FIREBASE_MESSAGING_SENDER_ID` - Firebase sender ID
+- `VITE_FIREBASE_APP_ID` - Firebase app ID
 
 ### Server (.env)
 - `PORT=5000` - Server port
-- `NODE_ENV=development` - Environment mode
+- `MONGO_URI` - MongoDB Atlas connection string
+- `JWT_SECRET` - JWT secret key used for API auth
+- `CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name
+- `CLOUDINARY_API_KEY` - Cloudinary API key
+- `CLOUDINARY_API_SECRET` - Cloudinary API secret
 
 ## Available Scripts
 
