@@ -51,7 +51,7 @@ const parseOrderItems = (items) => {
 router.post('/checkout', verifyToken, upload.array('receipts', 5), async (req, res) => {
   try {
     const paymentMethod = req.body.paymentMethod || 'bank-slip';
-    const items = parseOrderItems(req.body.items);
+    let items = parseOrderItems(req.body.items);
     const total = Number(req.body.total);
     const address = req.body.address;
 
@@ -64,6 +64,8 @@ router.post('/checkout', verifyToken, upload.array('receipts', 5), async (req, r
     }
 
     const receiptUrls = req.files?.length ? await getUploadedImages(req.files) : [];
+    // ensure numeric price values for order items
+    items = (items || []).map((it) => ({ ...it, price: Number(it.price) }));
     const sellerApprovals = buildSellerApprovals(items);
 
     const order = await Order.create({
@@ -105,7 +107,7 @@ router.post('/stripe-session', verifyToken, async (req, res) => {
           name: item.title,
           metadata: { productId: item._id }
         },
-        unit_amount: Math.round(item.price * 100),
+        unit_amount: Math.round(Number(item.price) * 100),
       },
       quantity: item.quantity,
     }));
@@ -158,14 +160,15 @@ router.post('/stripe-confirm', verifyToken, async (req, res) => {
     }
 
     const payload = JSON.parse(session.metadata?.orderPayload || '{}');
-    const items = payload.items || [];
-    const sellerApprovals = buildSellerApprovals(items).map((approval) => ({ ...approval, status: 'approved' }));
+    let itemsFromPayload = payload.items || [];
+    itemsFromPayload = itemsFromPayload.map((it) => ({ ...it, price: Number(it.price) }));
+    const sellerApprovals = buildSellerApprovals(itemsFromPayload).map((approval) => ({ ...approval, status: 'approved' }));
 
     const order = await Order.create({
       customerEmail: req.user.email,
       customerName: req.user.name || req.user.email,
-      items,
-      total: payload.total,
+      items: itemsFromPayload,
+      total: Number(payload.total),
       address: payload.address,
       paymentMethod: 'stripe',
       paymentStatus: 'paid',

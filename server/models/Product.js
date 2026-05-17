@@ -4,7 +4,10 @@ const productSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, required: true, trim: true },
   category: { type: String, trim: true },
-  price: { type: Number, required: true, min: 0 },
+  // store human-readable price as string (e.g. "10.00")
+  price: { type: String, required: true, trim: true },
+  // numeric representation to support sorting/filtering
+  priceNumber: { type: Number, required: true, min: 0 },
   images: {
     type: [String],
     required: true,
@@ -16,5 +19,5 @@ const productSchema = new mongoose.Schema({
   sellerEmail: { type: String, trim: true, default: 'unknown' }
 }, { timestamps: true });
 
-const Product = mongoose.model('Product', productSchema);
+const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
 export default Product;

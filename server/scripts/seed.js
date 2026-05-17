@@ -51,7 +51,8 @@ async function createProductsForSeller(seller, count = 12) {
     const title = `${randomFrom(['Autumn', 'Dawn', 'Murmur', 'Echo', 'Whisper', 'Rift', 'Harmony'])} ${randomFrom(['Landscape', 'Portrait', 'Abstract', 'Study', 'Composition'])} #${i}`;
     const category = randomFrom(categories);
     const description = `A ${category.toLowerCase()} by ${seller.name}. Crafted with care and attention to detail.`;
-    const price = randPrice(50, 1500);
+    const priceNum = randPrice(50, 1500);
+    const price = priceNum.toFixed(2);
     const seed = encodeURIComponent(`${seller.email}-${i}`);
     const imageUrl = `https://picsum.photos/seed/${seed}/800/600`;
 
@@ -59,7 +60,7 @@ async function createProductsForSeller(seller, count = 12) {
     const existing = await Product.findOne({ title, sellerEmail: seller.email });
     let product;
     if (!existing) {
-      product = await Product.create({ title, description, category, price, images: [imageUrl], sellerEmail: seller.email });
+      product = await Product.create({ title, description, category, price, priceNumber: Number(price), images: [imageUrl], sellerEmail: seller.email });
     } else {
       product = existing;
     }

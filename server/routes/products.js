@@ -48,24 +48,25 @@ router.get('/', async (req, res) => {
     }
 
     if (price) {
+      // use numeric field for comparisons
       if (price === '0-50') {
-        filter.price = { $gte: 0, $lte: 50 };
+        filter.priceNumber = { $gte: 0, $lte: 50 };
       } else if (price === '50-100') {
-        filter.price = { $gte: 50, $lte: 100 };
+        filter.priceNumber = { $gte: 50, $lte: 100 };
       } else if (price === '100-200') {
-        filter.price = { $gte: 100, $lte: 200 };
+        filter.priceNumber = { $gte: 100, $lte: 200 };
       } else if (price === '200-500') {
-        filter.price = { $gte: 200, $lte: 500 };
+        filter.priceNumber = { $gte: 200, $lte: 500 };
       } else if (price === '500+') {
-        filter.price = { $gte: 500 };
+        filter.priceNumber = { $gte: 500 };
       }
     }
 
     let sortOption = { createdAt: -1 };
     if (sort === 'priceAsc') {
-      sortOption = { price: 1 };
+      sortOption = { priceNumber: 1 };
     } else if (sort === 'priceDesc') {
-      sortOption = { price: -1 };
+      sortOption = { priceNumber: -1 };
     }
 
     const products = await Product.find(filter).sort(sortOption);
@@ -137,11 +138,20 @@ router.post('/upload', verifyToken, upload.fields([{ name: 'images', maxCount: 5
 
     const imageUrls = await getUploadedImages(files);
 
+    // normalize price to string with two decimals and store numeric copy
+    const normalizePrice = (val) => {
+      const n = parseFloat(String(val).replace(/,/g, '.'));
+      if (isNaN(n) || n < 0) throw new Error('Invalid price');
+      return n.toFixed(2);
+    };
+
+    const normalized = normalizePrice(price);
     const product = await Product.create({
       title,
       description,
       category: category || 'General',
-      price: Number(price),
+      price: normalized,
+      priceNumber: Number(normalized),
       images: imageUrls,
       sellerEmail: req.user.email,
     });
@@ -170,7 +180,16 @@ router.put('/:id', verifyToken, upload.fields([{ name: 'images', maxCount: 5 }, 
     if (title) updates.title = title;
     if (description) updates.description = description;
     if (category) updates.category = category;
-    if (price) updates.price = Number(price);
+    if (price) {
+      const normalizePrice = (val) => {
+        const n = parseFloat(String(val).replace(/,/g, '.'));
+        if (isNaN(n) || n < 0) throw new Error('Invalid price');
+        return n.toFixed(2);
+      };
+      const normalized = normalizePrice(price);
+      updates.price = normalized;
+      updates.priceNumber = Number(normalized);
+    }
 
     let remainingImages = [...product.images];
     if (removeImages) {

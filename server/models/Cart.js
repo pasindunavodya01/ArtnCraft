@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 const CartItemSchema = new mongoose.Schema({
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
   title: String,
-  price: Number,
+  // store price as string to match Product.price, keep numeric for convenience
+  price: String,
+  priceNumber: Number,
   quantity: { type: Number, default: 1 },
   sellerEmail: String,
   images: [String],
