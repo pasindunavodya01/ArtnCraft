@@ -5,6 +5,17 @@ import api, { setAuthToken } from '../services/api.js';
 
 const AuthContext = createContext();
 
+function decodeToken(token) {
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(window.atob(payload));
+    return decoded;
+  } catch (err) {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState('customer');
@@ -18,9 +29,16 @@ export function AuthProvider({ children }) {
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        const storedRole = localStorage.getItem(`role:${currentUser.email}`) || 'customer';
+        const storedRole = localStorage.getItem(`role:${currentUser.email}`);
+        const tokenRole = savedToken ? decodeToken(savedToken)?.role : null;
+        const resolvedRole = storedRole || tokenRole || 'customer';
+
+        if (!storedRole && tokenRole) {
+          localStorage.setItem(`role:${currentUser.email}`, tokenRole);
+        }
+
         setUser({ uid: currentUser.uid, email: currentUser.email, name: currentUser.displayName || 'Guest' });
-        setRole(storedRole);
+        setRole(resolvedRole);
       } else {
         setUser(null);
         setRole('customer');
@@ -47,13 +65,14 @@ export function AuthProvider({ children }) {
 
   const login = async ({ email, password }) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    const storedRole = localStorage.getItem(`role:${email}`) || 'customer';
-    setRole(storedRole);
-    setUser({ uid: result.user.uid, email: result.user.email, name: result.user.displayName || 'Guest' });
-
     const response = await api.post('/auth/login', { email, password });
     localStorage.setItem('ecommerce-api-token', response.data.token);
     setAuthToken(response.data.token);
+
+    const loginRole = response.data.user?.role || 'customer';
+    localStorage.setItem(`role:${email}`, loginRole);
+    setRole(loginRole);
+    setUser({ uid: result.user.uid, email: result.user.email, name: result.user.displayName || 'Guest' });
 
     return result.user;
   };

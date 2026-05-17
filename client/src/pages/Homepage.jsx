@@ -8,7 +8,7 @@ export default function Homepage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [productForm, setProductForm] = useState({ title: '', description: '', category: '', price: '', image: null });
+  const [productForm, setProductForm] = useState({ title: '', description: '', category: '', price: '', images: [] });
   const [success, setSuccess] = useState('');
   const { addToCart } = useCart();
   const { role, user } = useAuth();
@@ -31,8 +31,8 @@ export default function Homepage() {
 
   const handleInput = (event) => {
     const { name, value, files } = event.target;
-    if (name === 'image') {
-      setProductForm((prev) => ({ ...prev, image: files?.[0] || null }));
+    if (name === 'images') {
+      setProductForm((prev) => ({ ...prev, images: files ? Array.from(files) : [] }));
       return;
     }
     setProductForm((prev) => ({ ...prev, [name]: value }));
@@ -40,8 +40,8 @@ export default function Homepage() {
 
   const handleProductSubmit = async (event) => {
     event.preventDefault();
-    if (!productForm.image) {
-      setError('Please choose an image for the product.');
+    if (!productForm.images?.length) {
+      setError('Please choose at least one image for the product.');
       return;
     }
 
@@ -50,7 +50,7 @@ export default function Homepage() {
     formData.append('description', productForm.description);
     formData.append('category', productForm.category);
     formData.append('price', productForm.price);
-    formData.append('image', productForm.image);
+    productForm.images.forEach((image) => formData.append('images', image));
 
     try {
       const token = authTokenFromStorage();
@@ -60,7 +60,7 @@ export default function Homepage() {
       const response = await api.post('/products/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setProducts((prev) => [response.data, ...prev]);
       setSuccess('Product added successfully.');
-      setProductForm({ title: '', description: '', category: '', price: '', image: null });
+      setProductForm({ title: '', description: '', category: '', price: '', images: [] });
     } catch (err) {
       setError('Unable to add product. Ensure you are logged in as a seller.');
     }
@@ -139,10 +139,11 @@ export default function Homepage() {
                 className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
               />
               <input
-                name="image"
+                name="images"
                 onChange={handleInput}
                 type="file"
                 accept="image/*"
+                multiple
                 required
                 className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
               />

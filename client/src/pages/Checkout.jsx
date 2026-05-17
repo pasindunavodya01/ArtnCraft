@@ -109,7 +109,7 @@ export default function Checkout() {
               <div className="space-y-3 border-b border-gray-200 pb-4">
                 {cart.map((item) => (
                   <div key={item._id} className="flex gap-2">
-                    <img src={item.imageUrl} alt={item.title} className="h-12 w-12 rounded object-cover" />
+                    <img src={item.images?.[0] || item.imageUrl} alt={item.title} className="h-12 w-12 rounded object-cover" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{item.title}</p>
                       <p className="text-xs text-gray-600">Qty: {item.quantity}</p>

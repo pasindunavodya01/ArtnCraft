@@ -7,6 +7,8 @@ import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import SellerDashboard from './pages/SellerDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
+import SellerProducts from './pages/SellerProducts.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 
@@ -23,6 +25,8 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/seller" element={<SellerDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/seller/products" element={<SellerProducts />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
             </Routes>

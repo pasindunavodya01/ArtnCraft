@@ -45,7 +45,7 @@ export default function Cart() {
               {cart.map((item, index) => (
                 <div key={item._id} className={`p-6 ${index !== 0 ? 'border-t border-gray-200' : ''}`}>
                   <div className="flex gap-4">
-                    <img src={item.imageUrl} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />
+                    <img src={item.images?.[0] || item.imageUrl} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{item.title}</h3>
                       <p className="mt-1 text-sm text-gray-600">{item.category}</p>

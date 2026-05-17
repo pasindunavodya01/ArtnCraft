@@ -5,7 +5,7 @@ import api from '../services/api.js';
 import { Upload, Package, Trash2, Edit, Plus, TrendingUp } from 'lucide-react';
 
 export default function SellerDashboard() {
-  const { user, role } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -15,19 +15,27 @@ export default function SellerDashboard() {
     description: '',
     category: '',
     price: '',
-    image: null,
+    images: [],
+    existingImages: [],
+    removedImages: [],
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  if (authLoading) {
+    return null;
+  }
 
   if (role !== 'seller') {
     return <Navigate to="/" replace />;
   }
 
   useEffect(() => {
-    loadSellerProducts();
-  }, []);
+    if (role === 'seller' && user?.email) {
+      loadSellerProducts();
+    }
+  }, [role, user?.email]);
 
   const loadSellerProducts = async () => {
     try {
@@ -35,7 +43,8 @@ export default function SellerDashboard() {
       if (token) {
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
       }
-      const response = await api.get('/products');
+
+      const response = await api.get(`/products?sellerEmail=${encodeURIComponent(user.email)}`);
       setProducts(response.data);
     } catch (err) {
       setError('Failed to load your products');
@@ -46,11 +55,41 @@ export default function SellerDashboard() {
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'image') {
-      setForm((prev) => ({ ...prev, image: files?.[0] || null }));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === 'images') {
+      setForm((prev) => ({ ...prev, images: files ? Array.from(files) : [] }));
+      return;
     }
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEdit = (product) => {
+    setEdit(product);
+    setShowForm(true);
+    setForm({
+      title: product.title,
+      description: product.description,
+      category: product.category,
+      price: product.price,
+      images: [],
+      existingImages: product.images || [],
+      removedImages: [],
+    });
+    setError('');
+    setSuccess('');
+  };
+
+  const handleRemoveExistingImage = (imageUrl) => {
+    setForm((prev) => ({
+      ...prev,
+      existingImages: prev.existingImages.filter((url) => url !== imageUrl),
+      removedImages: [...prev.removedImages, imageUrl],
+    }));
+  };
+
+  const resetForm = () => {
+    setEdit(null);
+    setShowForm(false);
+    setForm({ title: '', description: '', category: '', price: '', images: [], existingImages: [], removedImages: [] });
   };
 
   const handleSubmit = async (e) => {
@@ -63,8 +102,13 @@ export default function SellerDashboard() {
       return;
     }
 
-    if (!form.image && !edit) {
-      setError('Please select an image');
+    if (!edit && form.images.length === 0) {
+      setError('Please select at least one image');
+      return;
+    }
+
+    if (edit && form.images.length === 0 && form.existingImages.length === 0) {
+      setError('Please keep or upload at least one image');
       return;
     }
 
@@ -75,8 +119,9 @@ export default function SellerDashboard() {
       formData.append('description', form.description);
       formData.append('category', form.category);
       formData.append('price', form.price);
-      if (form.image) {
-        formData.append('image', form.image);
+      form.images.forEach((image) => formData.append('images', image));
+      if (form.removedImages.length) {
+        formData.append('removeImages', JSON.stringify(form.removedImages));
       }
 
       const token = localStorage.getItem('ecommerce-api-token');
@@ -84,18 +129,23 @@ export default function SellerDashboard() {
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
       }
 
-      await api.post('/products/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (edit) {
+        await api.put(`/products/${edit._id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setSuccess('Product updated successfully!');
+      } else {
+        await api.post('/products/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setSuccess('Product added successfully!');
+      }
 
-      setSuccess('Product added successfully!');
-      setForm({ title: '', description: '', category: '', price: '', image: null });
-      setShowForm(false);
+      resetForm();
       loadSellerProducts();
-
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add product');
+      setError(err.response?.data?.message || 'Failed to save product');
     } finally {
       setSubmitting(false);
     }
@@ -192,7 +242,7 @@ export default function SellerDashboard() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
                 <Upload size={24} className="text-red-600" />
-                Add New Product
+                {edit ? 'Edit Product' : 'Add New Product'}
               </h2>
               <button
                 onClick={() => setShowForm(false)}
@@ -267,28 +317,53 @@ export default function SellerDashboard() {
 
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Image *
+                  Product Images *
                 </label>
                 <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center hover:border-red-500 transition">
                   <input
                     type="file"
-                    name="image"
+                    name="images"
                     onChange={handleInputChange}
                     accept="image/*"
+                    multiple
                     className="hidden"
                     id="imageInput"
-                    required={!edit}
+                    required={!edit && form.images.length === 0}
                   />
                   <label htmlFor="imageInput" className="cursor-pointer">
                     <Upload className="mx-auto text-gray-400 mb-2" size={32} />
                     <p className="text-sm font-medium text-gray-700">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                    {form.image && (
-                      <p className="mt-2 text-sm text-red-600 font-medium">
-                        ✓ {form.image.name}
-                      </p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB per image</p>
+                    {form.images.length > 0 && (
+                      <div className="mt-2 text-left text-sm text-gray-700">
+                        <p className="font-semibold text-red-600">New images:</p>
+                        <ul className="list-disc pl-5">
+                          {form.images.map((file) => (
+                            <li key={file.name}>{file.name}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {form.existingImages.length > 0 && (
+                      <div className="mt-2 text-left text-sm text-gray-700">
+                        <p className="font-semibold text-red-600">Existing images:</p>
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          {form.existingImages.map((imageUrl) => (
+                            <div key={imageUrl} className="relative rounded-lg overflow-hidden border border-gray-200">
+                              <img src={imageUrl} alt="Existing product" className="h-20 w-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExistingImage(imageUrl)}
+                                className="absolute top-1 right-1 rounded-full bg-white p-1 text-red-600 shadow-sm hover:bg-red-50"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </label>
                 </div>
@@ -300,14 +375,11 @@ export default function SellerDashboard() {
                   disabled={submitting}
                   className="flex-1 rounded-lg bg-red-600 px-6 py-3 font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
                 >
-                  {submitting ? 'Publishing...' : 'Publish Product'}
+                  {submitting ? (edit ? 'Saving...' : 'Publishing...') : (edit ? 'Update Product' : 'Publish Product')}
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setForm({ title: '', description: '', category: '', price: '', image: null });
-                  }}
+                  onClick={resetForm}
                   className="flex-1 rounded-lg border border-gray-300 px-6 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
                 >
                   Cancel
@@ -339,10 +411,15 @@ export default function SellerDashboard() {
                 <div key={product._id} className="rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition">
                   <div className="relative h-40 overflow-hidden bg-gray-100">
                     <img
-                      src={product.imageUrl}
+                      src={product.images?.[0] || product.imageUrl}
                       alt={product.title}
                       className="h-full w-full object-cover"
                     />
+                    {product.images?.length > 1 && (
+                      <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+                        {product.images.length} photos
+                      </div>
+                    )}
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-900 line-clamp-2">
@@ -356,6 +433,13 @@ export default function SellerDashboard() {
                       {product.description}
                     </p>
                     <div className="mt-4 flex gap-2">
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="flex-1 rounded-lg border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-50 transition font-medium"
+                      >
+                        <Edit size={16} />
+                        Edit
+                      </button>
                       <button
                         onClick={() => handleDelete(product._id)}
                         className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-50 py-2 text-red-600 hover:bg-red-100 transition font-medium"

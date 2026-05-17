@@ -5,7 +5,14 @@ const productSchema = new mongoose.Schema({
   description: { type: String, required: true, trim: true },
   category: { type: String, trim: true },
   price: { type: Number, required: true, min: 0 },
-  imageUrl: { type: String, required: true },
+  images: {
+    type: [String],
+    required: true,
+    validate: {
+      validator: (arr) => Array.isArray(arr) && arr.length > 0,
+      message: 'Please provide at least one image URL',
+    },
+  },
   sellerEmail: { type: String, trim: true, default: 'unknown' }
 }, { timestamps: true });
 

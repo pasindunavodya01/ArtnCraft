@@ -1,22 +1,29 @@
+import { Link } from 'react-router-dom';
 import { ShoppingCart, Star } from 'lucide-react';
 
 export default function ProductCard({ product, onAdd }) {
-  const rating = Math.floor(Math.random() * 2) + 4; // Random 4-5 stars for demo
-  const reviews = Math.floor(Math.random() * 1000) + 100;
+  const rating = product.ratingAvg || 0;
+  const reviewCount = product.reviewCount || 0;
+  const averageRounded = rating ? Math.round(rating) : 0;
 
   return (
     <div className="group rounded-lg border border-gray-200 bg-white shadow-sm transition hover:shadow-lg overflow-hidden">
       {/* Image Container */}
-      <div className="relative h-48 w-full overflow-hidden bg-gray-100">
+      <Link to={`/product/${product._id}`} className="relative block h-48 w-full overflow-hidden bg-gray-100">
         <img
-          src={product.imageUrl}
+          src={product.images?.[0] || product.imageUrl}
           alt={product.title}
           className="h-full w-full object-cover transition group-hover:scale-105"
         />
+        {product.images?.length > 1 && (
+          <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+            {product.images.length} photos
+          </div>
+        )}
         <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">
           Sale
         </div>
-      </div>
+      </Link>
 
       {/* Content */}
       <div className="p-4">
@@ -27,7 +34,9 @@ export default function ProductCard({ product, onAdd }) {
 
         {/* Title */}
         <h3 className="mt-1 line-clamp-2 text-sm font-semibold text-gray-900 group-hover:text-red-600">
-          {product.title}
+          <Link to={`/product/${product._id}`} className="block">
+            {product.title}
+          </Link>
         </h3>
 
         {/* Description */}
@@ -42,11 +51,13 @@ export default function ProductCard({ product, onAdd }) {
               <Star
                 key={i}
                 size={14}
-                className={i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                className={i < averageRounded ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
               />
             ))}
           </div>
-          <span className="text-xs text-gray-600">({reviews} reviews)</span>
+          <span className="text-xs text-gray-600">
+            {reviewCount > 0 ? `${rating.toFixed(1)} · ${reviewCount} review${reviewCount > 1 ? 's' : ''}` : 'No reviews yet'}
+          </span>
         </div>
 
         {/* Price */}
