@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext.jsx';
-import api from '../services/api.js';
+import api, { setAuthToken } from '../services/api.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { auth } from '../firebaseConfig.js';
 import { MapPin, Package } from 'lucide-react';
 
 export default function Checkout() {
@@ -64,6 +65,17 @@ export default function Checkout() {
       }
 
       if (paymentMethod === 'stripe') {
+        // ensure fresh Firebase ID token before calling server
+        try {
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            const freshToken = await currentUser.getIdToken(true);
+            setAuthToken(freshToken);
+          }
+        } catch (err) {
+          console.warn('Failed to refresh Firebase ID token', err);
+        }
+
         const response = await api.post('/orders/stripe-session', {
           items: orderPayload.items,
           total: orderPayload.total,

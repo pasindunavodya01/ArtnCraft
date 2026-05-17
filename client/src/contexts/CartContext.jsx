@@ -1,4 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import api from '../services/api.js';
+import { useAuth } from './AuthContext.jsx';
 
 const CartContext = createContext();
 
@@ -7,9 +9,20 @@ export function CartProvider({ children }) {
     const saved = localStorage.getItem('ecommerce-cart');
     return saved ? JSON.parse(saved) : [];
   });
+  const skipSyncRef = useRef(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     localStorage.setItem('ecommerce-cart', JSON.stringify(cart));
+    // sync to server for logged-in users
+    if (user && !skipSyncRef.current) {
+      try {
+        api.put('/cart', { items: cart }).catch((err) => console.warn('Cart sync failed', err));
+      } catch (e) {
+        console.warn('Cart sync error', e);
+      }
+    }
+    if (skipSyncRef.current) skipSyncRef.current = false;
   }, [cart]);
 
   const addToCart = (product) => {
@@ -31,6 +44,23 @@ export function CartProvider({ children }) {
   };
 
   const clearCart = () => setCart([]);
+
+  // when user logs in, fetch server cart
+  useEffect(() => {
+    const loadRemote = async () => {
+      if (!user?.email) return;
+      try {
+        const res = await api.get('/cart');
+        const serverItems = res.data?.items || [];
+        // replace local cart with server cart
+        skipSyncRef.current = true;
+        setCart(serverItems);
+      } catch (err) {
+        console.warn('Unable to load server cart', err);
+      }
+    };
+    loadRemote();
+  }, [user?.email]);
 
   const total = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
 
