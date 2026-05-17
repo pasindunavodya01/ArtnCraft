@@ -31,9 +31,12 @@ export default function Account() {
   const { user, role, updateUserProfile } = useAuth();
   const { addToCart } = useCart();
   const [searchParams] = useSearchParams();
-  const initialTab = ['profile', 'orders', 'wishlist'].includes(searchParams.get('tab'))
-    ? searchParams.get('tab')
-    : 'profile';
+  const visibleTabs = role === 'customer'
+    ? TABS
+    : TABS.filter((tab) => tab.id !== 'wishlist');
+  const allowedTabIds = visibleTabs.map((tab) => tab.id);
+  const tabFromUrl = searchParams.get('tab');
+  const initialTab = allowedTabIds.includes(tabFromUrl) ? tabFromUrl : 'profile';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [orders, setOrders] = useState([]);
   const [wishlist, setWishlist] = useState([]);
@@ -48,10 +51,10 @@ export default function Account() {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (['profile', 'orders', 'wishlist'].includes(tab)) {
+    if (allowedTabIds.includes(tab)) {
       setActiveTab(tab);
     }
-  }, [searchParams]);
+  }, [searchParams, allowedTabIds.join(',')]);
 
   useEffect(() => {
     if (!user) return;
@@ -171,15 +174,17 @@ export default function Account() {
             </span>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className={`mt-8 grid gap-4 ${role === 'customer' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
             <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
               <p className="text-sm text-red-100">Total orders</p>
               <p className="mt-1 text-2xl font-bold text-white">{orders.length}</p>
             </div>
-            <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
-              <p className="text-sm text-red-100">Wishlist items</p>
-              <p className="mt-1 text-2xl font-bold text-white">{wishlist.length}</p>
-            </div>
+            {role === 'customer' && (
+              <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+                <p className="text-sm text-red-100">Wishlist items</p>
+                <p className="mt-1 text-2xl font-bold text-white">{wishlist.length}</p>
+              </div>
+            )}
             <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
               <p className="text-sm text-red-100">Account type</p>
               <p className="mt-1 text-2xl font-bold capitalize text-white">{profile.role || role}</p>
@@ -192,7 +197,7 @@ export default function Account() {
         <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
           <aside className="lg:sticky lg:top-28 lg:self-start">
             <nav className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
-              {TABS.map((tab) => {
+              {visibleTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 return (

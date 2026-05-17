@@ -60,7 +60,7 @@ export default function Homepage() {
 
   useEffect(() => {
     const loadRecommendations = async () => {
-      if (!user?.email) {
+      if (!user?.email || role !== 'customer') {
         setRecommendations([]);
         setPreferences(null);
         return;
@@ -77,7 +77,7 @@ export default function Homepage() {
       }
     };
     loadRecommendations();
-  }, [user?.email]);
+  }, [user?.email, role]);
 
   const handleAdd = (product) => addToCart(product);
 
@@ -266,7 +266,7 @@ export default function Homepage() {
           </div>
         )}
 
-        {user && (
+        {user && role === 'customer' && (
           <section className="mb-12">
             <div className="mb-6">
               <h2 className="text-3xl font-bold text-gray-900">Recommended for You</h2>
