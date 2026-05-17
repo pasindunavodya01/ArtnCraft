@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api, { setAuthToken } from '../services/api.js';
 import { useCart } from '../contexts/CartContext.jsx';
@@ -11,16 +11,20 @@ export default function StripeSuccess() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { clearCart } = useCart();
+  const calledRef = useRef(null);
 
   useEffect(() => {
-    const confirm = async () => {
-      const sessionId = searchParams.get('session_id');
-      if (!sessionId) {
-        setError('Missing Stripe session ID.');
-        setLoading(false);
-        return;
-      }
+    const sessionId = searchParams.get('session_id');
+    if (!sessionId) {
+      setError('Missing Stripe session ID.');
+      setLoading(false);
+      return;
+    }
 
+    if (calledRef.current === sessionId) return;
+    calledRef.current = sessionId;
+
+    const confirm = async () => {
       const existingToken = localStorage.getItem('ecommerce-api-token');
       if (existingToken) {
         setAuthToken(existingToken);
