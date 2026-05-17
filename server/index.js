@@ -10,6 +10,7 @@ import cartRoutes from './routes/cart.js';
 import recommendationRoutes from './routes/recommendations.js';
 import interactionRoutes from './routes/interactions.js';
 import wishlistRoutes from './routes/wishlist.js';
+import adminRoutes from './routes/admin.js';
 import { isFirebaseAdminAvailable } from './utils/firebaseAdmin.js';
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/interactions', interactionRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK' });

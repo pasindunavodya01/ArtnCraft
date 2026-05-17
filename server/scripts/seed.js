@@ -45,7 +45,19 @@ async function createUsers() {
     sellers.push(user);
   }
 
-  return { customers, sellers };
+  let admin = await User.findOne({ email: 'admin@artncraft.com' });
+  if (!admin) {
+    const password = await bcrypt.hash('admin123', 10);
+    admin = await User.create({
+      name: 'System Admin',
+      email: 'admin@artncraft.com',
+      password,
+      role: 'admin',
+    });
+    console.log('Created admin user: admin@artncraft.com / admin123');
+  }
+
+  return { customers, sellers, admin };
 }
 
 async function createProductsForSeller(seller, count = 12) {
