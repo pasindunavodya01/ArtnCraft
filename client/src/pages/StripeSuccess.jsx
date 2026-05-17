@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import api from '../services/api.js';
+import api, { setAuthToken } from '../services/api.js';
+import { useCart } from '../contexts/CartContext.jsx';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 
 export default function StripeSuccess() {
@@ -9,6 +10,7 @@ export default function StripeSuccess() {
   const [message, setMessage] = useState('Confirming payment...');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { clearCart } = useCart();
 
   useEffect(() => {
     const confirm = async () => {
@@ -19,8 +21,14 @@ export default function StripeSuccess() {
         return;
       }
 
+      const existingToken = localStorage.getItem('ecommerce-api-token');
+      if (existingToken) {
+        setAuthToken(existingToken);
+      }
+
       try {
         const response = await api.post('/orders/stripe-confirm', { sessionId });
+        clearCart();
         setMessage(`Payment confirmed! Your order #${response.data._id.slice(-6)} is now paid.`);
       } catch (err) {
         setError(err.response?.data?.message || 'Could not confirm Stripe payment.');

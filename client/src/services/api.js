@@ -11,6 +11,11 @@ const api = axios.create({
   }
 });
 
+const savedToken = typeof localStorage !== 'undefined' ? localStorage.getItem('ecommerce-api-token') : null;
+if (savedToken) {
+  api.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
+}
+
 export function setAuthToken(token) {
   if (token) {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
