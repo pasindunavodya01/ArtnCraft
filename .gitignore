@@ -12,3 +12,6 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Service account
+artncraft-ac7ae-firebase-adminsdk-fbsvc-599ca53d9e.json

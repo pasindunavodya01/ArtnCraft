@@ -9,6 +9,7 @@ import SellerDashboard from './pages/SellerDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import SellerProducts from './pages/SellerProducts.jsx';
+import StripeSuccess from './pages/StripeSuccess.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 
@@ -29,6 +30,7 @@ function App() {
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/stripe-success" element={<StripeSuccess />} />
             </Routes>
           </BrowserRouter>
         </div>
