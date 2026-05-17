@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { Search, ShoppingCart, User } from 'lucide-react';
+import { Heart, Search, ShoppingCart, User } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -68,10 +68,24 @@ export default function Navbar() {
               <span className="text-xs font-semibold">Cart</span>
             </NavLink>
 
-            <div className="flex flex-col items-center gap-1 text-gray-700 transition hover:text-red-600 cursor-pointer">
-              <User size={24} />
-              <span className="text-xs font-semibold">Account</span>
-            </div>
+            {user && (
+              <NavLink to="/account?tab=wishlist" className="group flex flex-col items-center gap-1 text-gray-700 transition hover:text-red-600">
+                <Heart size={24} />
+                <span className="text-xs font-semibold">Wishlist</span>
+              </NavLink>
+            )}
+
+            {user ? (
+              <NavLink to="/account" className="group flex flex-col items-center gap-1 text-gray-700 transition hover:text-red-600">
+                <User size={24} />
+                <span className="text-xs font-semibold">Account</span>
+              </NavLink>
+            ) : (
+              <NavLink to="/login" className="group flex flex-col items-center gap-1 text-gray-700 transition hover:text-red-600">
+                <User size={24} />
+                <span className="text-xs font-semibold">Account</span>
+              </NavLink>
+            )}
           </div>
         </div>
       </div>
@@ -95,10 +109,12 @@ export default function Navbar() {
             )}
             {user && (
               <NavLink to="/account" className={({ isActive }) => isActive ? 'text-red-600 py-3 border-b-2 border-red-600' : 'py-3 hover:text-red-600'}>
-                <div className="flex flex-col items-center gap-1 text-gray-700 transition hover:text-red-600">
-                  <User size={24} />
-                  <span className="text-xs font-semibold">Account</span>
-                </div>
+                My Account
+              </NavLink>
+            )}
+            {user && (
+              <NavLink to="/account?tab=wishlist" className={({ isActive }) => isActive ? 'text-red-600 py-3 border-b-2 border-red-600' : 'py-3 hover:text-red-600'}>
+                Wishlist
               </NavLink>
             )}
             {user && (

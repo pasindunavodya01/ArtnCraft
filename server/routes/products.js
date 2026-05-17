@@ -43,6 +43,9 @@ router.get('/', async (req, res) => {
         { title: regex },
         { description: regex },
         { category: regex },
+        { style: regex },
+        { medium: regex },
+        { tags: regex },
         { sellerEmail: regex },
       ];
     }
@@ -129,7 +132,7 @@ router.post('/upload', verifyToken, upload.fields([{ name: 'images', maxCount: 5
       return res.status(403).json({ message: 'Only sellers and admins can add products' });
     }
 
-    const { title, description, price, category } = req.body;
+    const { title, description, price, category, style, medium, tags } = req.body;
     const files = [...(req.files?.images || []), ...(req.files?.image || [])];
 
     if (!title || !description || !price || files.length === 0) {
@@ -137,6 +140,9 @@ router.post('/upload', verifyToken, upload.fields([{ name: 'images', maxCount: 5
     }
 
     const imageUrls = await getUploadedImages(files);
+    const parsedTags = typeof tags === 'string'
+      ? tags.split(',').map((t) => t.trim()).filter(Boolean)
+      : Array.isArray(tags) ? tags.map((t) => String(t).trim()).filter(Boolean) : [];
 
     // normalize price to string with two decimals and store numeric copy
     const normalizePrice = (val) => {
@@ -150,6 +156,9 @@ router.post('/upload', verifyToken, upload.fields([{ name: 'images', maxCount: 5
       title,
       description,
       category: category || 'General',
+      style: style || '',
+      medium: medium || '',
+      tags: parsedTags,
       price: normalized,
       priceNumber: Number(normalized),
       images: imageUrls,
@@ -174,12 +183,19 @@ router.put('/:id', verifyToken, upload.fields([{ name: 'images', maxCount: 5 }, 
       return res.status(403).json({ message: 'Not authorized to update this product' });
     }
 
-    const { title, description, price, category, removeImages } = req.body;
+    const { title, description, price, category, style, medium, tags, removeImages } = req.body;
     const updates = {};
 
     if (title) updates.title = title;
     if (description) updates.description = description;
     if (category) updates.category = category;
+    if (style !== undefined) updates.style = style;
+    if (medium !== undefined) updates.medium = medium;
+    if (tags !== undefined) {
+      updates.tags = typeof tags === 'string'
+        ? tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : Array.isArray(tags) ? tags.map((t) => String(t).trim()).filter(Boolean) : [];
+    }
     if (price) {
       const normalizePrice = (val) => {
         const n = parseFloat(String(val).replace(/,/g, '.'));

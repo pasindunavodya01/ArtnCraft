@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext.jsx';
+import { formatPrice, getItemImage, getItemUnitPrice } from '../utils/cart.js';
 import api, { setAuthToken } from '../services/api.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { auth } from '../firebaseConfig.js';
@@ -208,12 +209,16 @@ export default function Checkout() {
               <div className="space-y-3 border-b border-gray-200 pb-4">
                 {cart.map((item) => (
                   <div key={item._id} className="flex gap-2">
-                    <img src={item.images?.[0] || item.imageUrl} alt={item.title} className="h-12 w-12 rounded object-cover" />
+                    {getItemImage(item) ? (
+                      <img src={getItemImage(item)} alt={item.title} className="h-12 w-12 rounded object-cover" />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-[10px] text-gray-500">N/A</div>
+                    )}
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{item.title}</p>
                       <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-semibold text-gray-900">${formatPrice(getItemUnitPrice(item) * item.quantity)}</p>
                   </div>
                 ))}
               </div>

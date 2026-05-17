@@ -1,12 +1,18 @@
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext.jsx';
+import { formatPrice, getItemImage, getItemUnitPrice } from '../utils/cart.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { Trash2, ArrowRight } from 'lucide-react';
 
 export default function Cart() {
-  const { cart, removeFromCart, updateQuantity, total } = useCart();
+  const { cart, removeFromCart, updateQuantity, refreshCart, total } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.email) refreshCart();
+  }, [user?.email]);
 
   if (cart.length === 0) {
     return (
@@ -45,11 +51,17 @@ export default function Cart() {
               {cart.map((item, index) => (
                 <div key={item._id} className={`p-6 ${index !== 0 ? 'border-t border-gray-200' : ''}`}>
                   <div className="flex gap-4">
-                    <img src={item.images?.[0] || item.imageUrl} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />
+                    {getItemImage(item) ? (
+                      <img src={getItemImage(item)} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />
+                    ) : (
+                      <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-gray-100 text-xs text-gray-500">
+                        No image
+                      </div>
+                    )}
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{item.title}</h3>
                       <p className="mt-1 text-sm text-gray-600">{item.category}</p>
-                      <p className="mt-2 text-lg font-bold text-gray-900">${item.price.toFixed(2)}</p>
+                      <p className="mt-2 text-lg font-bold text-gray-900">${formatPrice(getItemUnitPrice(item))}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <input

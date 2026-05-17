@@ -1,8 +1,51 @@
 import express from 'express';
 import Cart from '../models/Cart.js';
+import Product from '../models/Product.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = express.Router();
+
+const enrichCartItems = async (items) => {
+  if (!items?.length) return [];
+
+  const productIds = items
+    .map((item) => item.productId)
+    .filter(Boolean);
+
+  const products = productIds.length
+    ? await Product.find({ _id: { $in: productIds } })
+    : [];
+  const productMap = new Map(products.map((p) => [String(p._id), p]));
+
+  return items.map((item) => {
+    const itemObj = item.toObject ? item.toObject() : { ...item };
+    const product = productMap.get(String(itemObj.productId));
+    const images = (itemObj.images?.length ? itemObj.images : null)
+      || (product?.images?.length ? product.images : []);
+
+    return {
+      ...itemObj,
+      productId: itemObj.productId,
+      title: itemObj.title || product?.title,
+      category: itemObj.category || product?.category,
+      price: itemObj.price || product?.price,
+      priceNumber: itemObj.priceNumber ?? product?.priceNumber,
+      sellerEmail: itemObj.sellerEmail || product?.sellerEmail,
+      images,
+    };
+  });
+};
+
+const sanitizeCartItems = (items) => items.map((item) => ({
+  productId: item.productId || item._id,
+  title: item.title,
+  price: item.price != null ? String(item.price) : undefined,
+  priceNumber: item.priceNumber,
+  quantity: item.quantity || 1,
+  sellerEmail: item.sellerEmail,
+  images: Array.isArray(item.images) ? item.images : [],
+  category: item.category,
+}));
 
 // Get current user's cart (create if missing)
 router.get('/', verifyToken, async (req, res) => {
@@ -12,7 +55,8 @@ router.get('/', verifyToken, async (req, res) => {
     if (!cart) {
       cart = await Cart.create({ userEmail: email, items: [] });
     }
-    res.json(cart);
+    const enrichedItems = await enrichCartItems(cart.items);
+    res.json({ ...cart.toObject(), items: enrichedItems });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Unable to fetch cart' });
@@ -23,13 +67,14 @@ router.get('/', verifyToken, async (req, res) => {
 router.put('/', verifyToken, async (req, res) => {
   try {
     const email = req.user.email;
-    const items = Array.isArray(req.body.items) ? req.body.items : [];
+    const items = sanitizeCartItems(Array.isArray(req.body.items) ? req.body.items : []);
     const cart = await Cart.findOneAndUpdate(
       { userEmail: email },
       { items },
       { upsert: true, new: true }
     );
-    res.json(cart);
+    const enrichedItems = await enrichCartItems(cart.items);
+    res.json({ ...cart.toObject(), items: enrichedItems });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Unable to update cart' });

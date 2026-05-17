@@ -4,6 +4,9 @@ const productSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, required: true, trim: true },
   category: { type: String, trim: true },
+  style: { type: String, trim: true, default: '' },
+  medium: { type: String, trim: true, default: '' },
+  tags: { type: [String], default: [] },
   // store human-readable price as string (e.g. "10.00")
   price: { type: String, required: true, trim: true },
   // numeric representation to support sorting/filtering

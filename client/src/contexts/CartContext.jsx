@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../services/api.js';
+import { getItemUnitPrice, normalizeCartItem, toServerCartItem } from '../utils/cart.js';
 import { useAuth } from './AuthContext.jsx';
 
 const CartContext = createContext();
@@ -7,7 +8,7 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem('ecommerce-cart');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved).map(normalizeCartItem) : [];
   });
   const skipSyncRef = useRef(false);
   const { user } = useAuth();
@@ -17,7 +18,7 @@ export function CartProvider({ children }) {
     // sync to server for logged-in users
     if (user && !skipSyncRef.current) {
       try {
-        api.put('/cart', { items: cart }).catch((err) => console.warn('Cart sync failed', err));
+        api.put('/cart', { items: cart.map(toServerCartItem) }).catch((err) => console.warn('Cart sync failed', err));
       } catch (e) {
         console.warn('Cart sync error', e);
       }
@@ -31,7 +32,7 @@ export function CartProvider({ children }) {
       if (existing) {
         return prev.map((item) => item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item);
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, normalizeCartItem({ ...product, quantity: 1 })];
     });
   };
 
@@ -45,27 +46,30 @@ export function CartProvider({ children }) {
 
   const clearCart = () => setCart([]);
 
+  const refreshCart = async () => {
+    if (!user?.email) return;
+    try {
+      const res = await api.get('/cart');
+      const serverItems = (res.data?.items || []).map(normalizeCartItem);
+      skipSyncRef.current = true;
+      setCart(serverItems);
+    } catch (err) {
+      console.warn('Unable to load server cart', err);
+    }
+  };
+
   // when user logs in, fetch server cart
   useEffect(() => {
-    const loadRemote = async () => {
-      if (!user?.email) return;
-      try {
-        const res = await api.get('/cart');
-        const serverItems = res.data?.items || [];
-        // replace local cart with server cart
-        skipSyncRef.current = true;
-        setCart(serverItems);
-      } catch (err) {
-        console.warn('Unable to load server cart', err);
-      }
-    };
-    loadRemote();
+    refreshCart();
   }, [user?.email]);
 
-  const total = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+  const total = useMemo(
+    () => cart.reduce((sum, item) => sum + getItemUnitPrice(item) * (item.quantity || 1), 0),
+    [cart]
+  );
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, total }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, refreshCart, total }}>
       {children}
     </CartContext.Provider>
   );

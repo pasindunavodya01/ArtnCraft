@@ -9,7 +9,12 @@ export default function Homepage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [productForm, setProductForm] = useState({ title: '', description: '', category: '', price: '', images: [] });
+  const [productForm, setProductForm] = useState({
+    title: '', description: '', category: '', style: '', medium: '', tags: '', price: '', images: [],
+  });
+  const [recommendations, setRecommendations] = useState([]);
+  const [recLoading, setRecLoading] = useState(false);
+  const [preferences, setPreferences] = useState(null);
   const [success, setSuccess] = useState('');
   const [categories, setCategories] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,6 +58,27 @@ export default function Homepage() {
     loadProducts();
   }, [searchParams]);
 
+  useEffect(() => {
+    const loadRecommendations = async () => {
+      if (!user?.email) {
+        setRecommendations([]);
+        setPreferences(null);
+        return;
+      }
+      try {
+        setRecLoading(true);
+        const response = await api.get('/recommendations?limit=8');
+        setRecommendations(response.data.recommendations || []);
+        setPreferences(response.data.preferences || null);
+      } catch {
+        setRecommendations([]);
+      } finally {
+        setRecLoading(false);
+      }
+    };
+    loadRecommendations();
+  }, [user?.email]);
+
   const handleAdd = (product) => addToCart(product);
 
   const handleFilterSubmit = (event) => {
@@ -95,6 +121,9 @@ export default function Homepage() {
     formData.append('title', productForm.title);
     formData.append('description', productForm.description);
     formData.append('category', productForm.category);
+    formData.append('style', productForm.style);
+    formData.append('medium', productForm.medium);
+    formData.append('tags', productForm.tags);
     formData.append('price', productForm.price);
     productForm.images.forEach((image) => formData.append('images', image));
 
@@ -106,7 +135,9 @@ export default function Homepage() {
       const response = await api.post('/products/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setProducts((prev) => [response.data, ...prev]);
       setSuccess('Product added successfully.');
-      setProductForm({ title: '', description: '', category: '', price: '', images: [] });
+      setProductForm({
+        title: '', description: '', category: '', style: '', medium: '', tags: '', price: '', images: [],
+      });
     } catch (err) {
       setError('Unable to add product. Ensure you are logged in as a seller.');
     }
@@ -171,8 +202,29 @@ export default function Homepage() {
                 name="category"
                 value={productForm.category}
                 onChange={handleInput}
-                placeholder="Category"
+                placeholder="Category (e.g. Paintings)"
                 required
+                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              />
+              <input
+                name="style"
+                value={productForm.style}
+                onChange={handleInput}
+                placeholder="Style (e.g. Abstract)"
+                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              />
+              <input
+                name="medium"
+                value={productForm.medium}
+                onChange={handleInput}
+                placeholder="Medium (e.g. Oil on canvas)"
+                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              />
+              <input
+                name="tags"
+                value={productForm.tags}
+                onChange={handleInput}
+                placeholder="Tags (comma-separated)"
                 className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
               />
               <input
@@ -212,6 +264,38 @@ export default function Homepage() {
             {success && <p className="mt-4 rounded-lg bg-green-50 p-3 text-green-800">{success}</p>}
             {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
           </div>
+        )}
+
+        {user && (
+          <section className="mb-12">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-gray-900">Recommended for You</h2>
+              <p className="mt-2 text-gray-600">
+                Based on your views, wishlist, cart, and purchases
+              </p>
+              {preferences?.topCategories?.length > 0 && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Preferences: {preferences.topCategories.map((c) => c.name).join(', ')}
+                  {preferences.priceRange && ` · $${preferences.priceRange.min.toFixed(0)}–$${preferences.priceRange.max.toFixed(0)}`}
+                </p>
+              )}
+            </div>
+            {recLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-red-600" />
+              </div>
+            ) : recommendations.length > 0 ? (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {recommendations.map((product) => (
+                  <ProductCard key={product._id} product={product} onAdd={handleAdd} />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
+                Browse artworks, add items to your wishlist or cart, and we&apos;ll personalize recommendations.
+              </p>
+            )}
+          </section>
         )}
 
         {/* Products Section */}

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Star } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Star } from 'lucide-react';
 import api from '../services/api.js';
+import ProductCard from '../components/ProductCard.jsx';
 import { useCart } from '../contexts/CartContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
@@ -21,6 +22,9 @@ export default function ProductDetail() {
   const [comment, setComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState('');
+  const [inWishlist, setInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -36,6 +40,62 @@ export default function ProductDetail() {
 
     loadProduct();
   }, [id]);
+
+  useEffect(() => {
+    if (!user?.email || !id) return;
+    api.post(`/interactions/view/${id}`).catch(() => {});
+  }, [id, user?.email]);
+
+  useEffect(() => {
+    const loadWishlistStatus = async () => {
+      if (!user?.email) {
+        setInWishlist(false);
+        return;
+      }
+      try {
+        const response = await api.get('/wishlist');
+        const ids = (response.data.productIds || []).map(String);
+        setInWishlist(ids.includes(String(id)));
+      } catch {
+        setInWishlist(false);
+      }
+    };
+    loadWishlistStatus();
+  }, [id, user?.email]);
+
+  useEffect(() => {
+    const loadRecommendations = async () => {
+      if (!user?.email) {
+        setRecommendations([]);
+        return;
+      }
+      try {
+        const response = await api.get(`/recommendations?limit=4&exclude=${id}`);
+        setRecommendations(response.data.recommendations || []);
+      } catch {
+        setRecommendations([]);
+      }
+    };
+    loadRecommendations();
+  }, [id, user?.email]);
+
+  const toggleWishlist = async () => {
+    if (!user?.email) return;
+    setWishlistLoading(true);
+    try {
+      if (inWishlist) {
+        await api.delete(`/wishlist/${id}`);
+        setInWishlist(false);
+      } else {
+        await api.post(`/wishlist/${id}`);
+        setInWishlist(true);
+      }
+    } catch {
+      // keep current state on error
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadReviews = async () => {
@@ -167,6 +227,19 @@ export default function ProductDetail() {
               <div className="rounded-2xl border border-gray-200 p-5">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">Category</p>
                 <p className="mt-3 text-lg font-semibold text-gray-900">{product.category || 'General'}</p>
+                {product.style && (
+                  <p className="mt-2 text-sm text-gray-600">Style: {product.style}</p>
+                )}
+                {product.medium && (
+                  <p className="mt-1 text-sm text-gray-600">Medium: {product.medium}</p>
+                )}
+                {product.tags?.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {product.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">{tag}</span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="rounded-2xl border border-gray-200 p-5">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">Seller</p>
@@ -233,16 +306,31 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <button
-                onClick={() => addToCart(product)}
-                className="mt-8 w-full rounded-2xl bg-red-600 px-6 py-3 text-base font-semibold text-white transition hover:bg-red-700"
-              >
-                <ShoppingCart size={18} className="inline-block align-text-bottom" />
-                <span className="ml-2">Add to Cart</span>
-              </button>
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                <button
+                  onClick={() => addToCart(product)}
+                  className="w-full rounded-2xl bg-red-600 px-6 py-3 text-base font-semibold text-white transition hover:bg-red-700"
+                >
+                  <ShoppingCart size={18} className="inline-block align-text-bottom" />
+                  <span className="ml-2">Add to Cart</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleWishlist}
+                  disabled={!user || wishlistLoading}
+                  className={`w-full rounded-2xl border px-6 py-3 text-base font-semibold transition ${
+                    inWishlist
+                      ? 'border-red-600 bg-red-50 text-red-700'
+                      : 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
+                  } disabled:opacity-60`}
+                >
+                  <Heart size={18} className={`inline-block align-text-bottom ${inWishlist ? 'fill-red-600 text-red-600' : ''}`} />
+                  <span className="ml-2">{inWishlist ? 'In Wishlist' : 'Add to Wishlist'}</span>
+                </button>
+              </div>
 
               {!user && (
-                <p className="mt-4 text-sm text-gray-600">Log in to save this item or checkout faster.</p>
+                <p className="mt-4 text-sm text-gray-600">Log in to save items to your wishlist and get personalized recommendations.</p>
               )}
 
               <div className="mt-8 rounded-3xl bg-gray-50 p-6 shadow-sm">
@@ -342,6 +430,18 @@ export default function ProductDetail() {
                 </div>
               </div>
             </div>
+
+            {user && recommendations.length > 0 && (
+              <div className="rounded-3xl bg-white p-6 shadow-sm">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">You may also like</p>
+                <p className="mt-2 text-sm text-gray-600">Matched to your browsing and purchase preferences</p>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  {recommendations.map((item) => (
+                    <ProductCard key={item._id} product={item} onAdd={addToCart} />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-3xl bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">Product features</p>
