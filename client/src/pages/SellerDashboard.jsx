@@ -26,6 +26,7 @@ export default function SellerDashboard() {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [orderMessage, setOrderMessage] = useState('');
   const [orderError, setOrderError] = useState('');
+  const [activeTab, setActiveTab] = useState('products');
 
   if (authLoading) {
     return null;
@@ -205,6 +206,73 @@ export default function SellerDashboard() {
     }
   };
 
+  const orderStats = [
+    {
+      label: 'Total Orders',
+      value: orders.length,
+      icon: Package,
+      color: 'bg-blue-100',
+      textColor: 'text-blue-600',
+    },
+    {
+      label: 'Total Seller Revenue',
+      value: `Rs. ${orders.reduce((sum, order) => {
+        const sellerItems = order.items?.filter((item) => item.sellerEmail?.toLowerCase() === user?.email?.toLowerCase()) || [];
+        return sum + sellerItems.reduce((itemSum, item) => itemSum + parseFloat(item.price || 0) * item.quantity, 0);
+      }, 0).toFixed(2)}`,
+      icon: TrendingUp,
+      color: 'bg-green-100',
+      textColor: 'text-green-600',
+    },
+    {
+      label: 'Items Sold',
+      value: orders.reduce((sum, order) => {
+        const sellerItems = order.items?.filter((item) => item.sellerEmail?.toLowerCase() === user?.email?.toLowerCase()) || [];
+        return sum + sellerItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
+      }, 0),
+      icon: Upload,
+      color: 'bg-orange-100',
+      textColor: 'text-orange-600',
+    },
+    {
+      label: 'Pending Approvals',
+      value: orders.reduce((sum, order) => {
+        const approval = order.sellerApprovals?.find((approvalItem) => approvalItem.sellerEmail?.toLowerCase() === user?.email?.toLowerCase());
+        return sum + (approval?.status === 'pending' ? 1 : 0);
+      }, 0),
+      icon: Plus,
+      color: 'bg-red-100',
+      textColor: 'text-red-600',
+    },
+  ];
+
+  const dailyRevenueData = (() => {
+    const sellerEmail = user?.email?.toLowerCase();
+    const dateMap = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 6; i >= 0; i -= 1) {
+      const day = new Date(today);
+      day.setDate(today.getDate() - i);
+      const key = day.toISOString().slice(0, 10);
+      dateMap[key] = {
+        label: day.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
+        revenue: 0,
+      };
+    }
+
+    orders.forEach((order) => {
+      const key = new Date(order.createdAt).toISOString().slice(0, 10);
+      if (!dateMap[key]) return;
+      const sellerItems = order.items?.filter((item) => item.sellerEmail?.toLowerCase() === sellerEmail) || [];
+      dateMap[key].revenue += sellerItems.reduce((sum, item) => sum + parseFloat(item.price || 0) * item.quantity, 0);
+    });
+
+    return Object.values(dateMap);
+  })();
+
+  const maxDailyRevenue = Math.max(...dailyRevenueData.map((day) => day.revenue), 1);
+
   const stats = [
     {
       label: 'Total Products',
@@ -226,10 +294,10 @@ export default function SellerDashboard() {
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Header */}
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
-            <p className="mt-2 text-gray-600">Welcome back, {user?.name}! Manage your products here.</p>
+            <p className="mt-2 text-gray-600">Welcome back, {user?.name}! Manage your products and store orders.</p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -240,9 +308,27 @@ export default function SellerDashboard() {
           </button>
         </div>
 
+        {/* Tabs */}
+        <div className="mb-8 flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setActiveTab('products')}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${activeTab === 'products' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Products
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('orders')}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${activeTab === 'orders' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Seller Orders
+          </button>
+        </div>
+
         {/* Stats */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2">
-          {stats.map((stat) => {
+          {(activeTab === 'products' ? stats : orderStats).map((stat) => {
             const Icon = stat.icon;
             return (
               <div key={stat.label} className="rounded-lg border border-gray-200 bg-white p-6 shadow-md">
@@ -259,6 +345,43 @@ export default function SellerDashboard() {
             );
           })}
         </div>
+
+        {activeTab === 'orders' && (
+          <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Daily revenue</p>
+                <h2 className="mt-1 text-2xl font-bold text-gray-900">Last 7 days</h2>
+              </div>
+              <p className="text-sm font-semibold text-gray-900">Total: Rs. {dailyRevenueData.reduce((sum, day) => sum + day.revenue, 0).toFixed(2)}</p>
+            </div>
+
+            <div className="mt-6 overflow-x-auto">
+              <div className="flex h-52 items-end gap-3 pb-4">
+                {dailyRevenueData.map((day) => (
+                  <div key={day.label} className="flex-1 text-center">
+                    <div
+                      className="mx-auto flex h-full items-end justify-center"
+                      style={{ minHeight: '1rem' }}
+                    >
+                      <div
+                        className="w-full rounded-t-2xl bg-red-600 transition-all"
+                        style={{
+                          height: `${(day.revenue / maxDailyRevenue) * 100}%`,
+                          minHeight: day.revenue > 0 ? '1rem' : '0.5rem',
+                        }}
+                      />
+                    </div>
+                    <div className="mt-3 text-xs text-gray-600">
+                      <p className="font-semibold text-gray-900">Rs. {day.revenue.toFixed(0)}</p>
+                      <p>{day.label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         {error && (
@@ -427,182 +550,183 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {/* Products List */}
-        <div>
-          <h2 className="mb-6 text-2xl font-bold text-gray-900">Your Products</h2>
+        {activeTab === 'products' ? (
+          <div>
+            <h2 className="mb-6 text-2xl font-bold text-gray-900">Your Products</h2>
 
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="text-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-red-600"></div>
-                <p className="mt-4 text-gray-600">Loading products...</p>
-              </div>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-              <Package size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600">No products yet. Click "Add Product" to get started!</p>
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map((product) => (
-                <div key={product._id} className="rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition">
-                  <div className="relative h-40 overflow-hidden bg-gray-100">
-                    <img
-                      src={product.images?.[0] || product.imageUrl}
-                      alt={product.title}
-                      className="h-full w-full object-cover"
-                    />
-                    {product.images?.length > 1 && (
-                      <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
-                        {product.images.length} photos
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 line-clamp-2">
-                      {product.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-600">{product.category}</p>
-                    <p className="mt-2 text-lg font-bold text-red-600">
-                      Rs. {parseFloat(product.price).toFixed(2)}
-                    </p>
-                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">
-                      {product.description}
-                    </p>
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        onClick={() => handleEdit(product)}
-                        className="flex-1 rounded-lg border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-50 transition font-medium"
-                      >
-                        <Edit size={16} />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product._id)}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-50 py-2 text-red-600 hover:bg-red-100 transition font-medium"
-                      >
-                        <Trash2 size={16} />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="text-center">
+                  <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-red-600"></div>
+                  <p className="mt-4 text-gray-600">Loading products...</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-12">
-          <h2 className="mb-6 text-2xl font-bold text-gray-900">Seller Orders</h2>
-
-          {orderMessage && (
-            <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-800">{orderMessage}</div>
-          )}
-          {orderError && (
-            <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{orderError}</div>
-          )}
-
-          {loadingOrders ? (
-            <div className="flex justify-center py-12">
-              <div className="text-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-red-600"></div>
-                <p className="mt-4 text-gray-600">Loading orders...</p>
               </div>
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-              <Package size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600">No orders received yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {orders.map((order) => {
-                const approval = order.sellerApprovals?.find((approvalItem) => approvalItem.sellerEmail?.toLowerCase() === user.email.toLowerCase());
-                const sellerItems = order.items?.filter((item) => item.sellerEmail?.toLowerCase() === user.email.toLowerCase()) || [];
-
-                return (
-                  <div key={order._id} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-gray-500">Order #{order._id.slice(-6)}</p>
-                        <p className="mt-1 text-lg font-semibold text-gray-900">{new Date(order.createdAt).toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{order.paymentMethod}</span>
-                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{order.paymentStatus}</span>
-                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{sellerItems.length} item{sellerItems.length !== 1 ? 's' : ''}</span>
+            ) : products.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
+                <Package size={48} className="mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600">No products yet. Click "Add Product" to get started!</p>
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {products.map((product) => (
+                  <div key={product._id} className="rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition">
+                    <div className="relative h-40 overflow-hidden bg-gray-100">
+                      <img
+                        src={product.images?.[0] || product.imageUrl}
+                        alt={product.title}
+                        className="h-full w-full object-cover"
+                      />
+                      {product.images?.length > 1 && (
+                        <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+                          {product.images.length} photos
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-gray-900 line-clamp-2">
+                        {product.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-600">{product.category}</p>
+                      <p className="mt-2 text-lg font-bold text-red-600">
+                        Rs. {parseFloat(product.price).toFixed(2)}
+                      </p>
+                      <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                        {product.description}
+                      </p>
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          onClick={() => handleEdit(product)}
+                          className="flex-1 rounded-lg border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-50 transition font-medium"
+                        >
+                          <Edit size={16} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product._id)}
+                          className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-50 py-2 text-red-600 hover:bg-red-100 transition font-medium"
+                        >
+                          <Trash2 size={16} />
+                          Delete
+                        </button>
                       </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900">Seller Orders</h2>
 
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <p className="text-sm text-gray-500">Customer</p>
-                        <p className="mt-1 text-gray-900">{order.customerName || order.customerEmail}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Total</p>
-                        <p className="mt-1 text-gray-900">Rs. {order.total.toFixed(2)}</p>
-                      </div>
-                    </div>
+            {orderMessage && (
+              <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-800">{orderMessage}</div>
+            )}
+            {orderError && (
+              <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{orderError}</div>
+            )}
 
-                    <div className="mt-4 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">
-                      <p className="font-semibold text-gray-900">Your items in this order</p>
-                      <div className="mt-3 space-y-2">
-                        {sellerItems.map((item) => (
-                          <div key={item.productId} className="flex items-center justify-between rounded-2xl bg-white p-3 border border-gray-200">
-                            <span>{item.title}</span>
-                            <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+            {loadingOrders ? (
+              <div className="flex justify-center py-12">
+                <div className="text-center">
+                  <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-red-600"></div>
+                  <p className="mt-4 text-gray-600">Loading orders...</p>
+                </div>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
+                <Package size={48} className="mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600">No orders received yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {orders.map((order) => {
+                  const approval = order.sellerApprovals?.find((approvalItem) => approvalItem.sellerEmail?.toLowerCase() === user.email.toLowerCase());
+                  const sellerItems = order.items?.filter((item) => item.sellerEmail?.toLowerCase() === user.email.toLowerCase()) || [];
 
-                    {order.paymentMethod === 'bank-slip' && order.receiptUrls?.length > 0 && (
-                      <div className="mt-4 rounded-2xl bg-white p-4 border border-gray-200">
-                        <p className="font-semibold text-gray-900">Slip / screenshot</p>
-                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                          {order.receiptUrls.map((url, index) => (
-                            <a key={url} href={url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-                              <img src={url} alt={`Receipt ${index + 1}`} className="h-44 w-full object-cover" />
-                            </a>
+                  return (
+                    <div key={order._id} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Order #{order._id.slice(-6)}</p>
+                          <p className="mt-1 text-lg font-semibold text-gray-900">{new Date(order.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{order.paymentMethod}</span>
+                          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{order.paymentStatus}</span>
+                          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{sellerItems.length} item{sellerItems.length !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-sm text-gray-500">Customer</p>
+                          <p className="mt-1 text-gray-900">{order.customerName || order.customerEmail}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Total</p>
+                          <p className="mt-1 text-gray-900">Rs. {order.total.toFixed(2)}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">
+                        <p className="font-semibold text-gray-900">Your items in this order</p>
+                        <div className="mt-3 space-y-2">
+                          {sellerItems.map((item) => (
+                            <div key={item.productId} className="flex items-center justify-between rounded-2xl bg-white p-3 border border-gray-200">
+                              <span>{item.title}</span>
+                              <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
+                            </div>
                           ))}
                         </div>
                       </div>
-                    )}
 
-                    {order.paymentMethod === 'bank-slip' && approval && (
-                      <div className="mt-4 rounded-2xl bg-white p-4 border border-gray-200">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                          <div>
-                            <p className="text-sm text-gray-500">Approval status</p>
-                            <p className="mt-1 font-semibold text-gray-900">{approval.status}</p>
+                      {order.paymentMethod === 'bank-slip' && order.receiptUrls?.length > 0 && (
+                        <div className="mt-4 rounded-2xl bg-white p-4 border border-gray-200">
+                          <p className="font-semibold text-gray-900">Slip / screenshot</p>
+                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                            {order.receiptUrls.map((url, index) => (
+                              <a key={url} href={url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+                                <img src={url} alt={`Receipt ${index + 1}`} className="h-44 w-full object-cover" />
+                              </a>
+                            ))}
                           </div>
-                          {approval.status === 'pending' ? (
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                onClick={() => handleApprove(order._id, true)}
-                                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleApprove(order._id, false)}
-                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          ) : null}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                      )}
+
+                      {order.paymentMethod === 'bank-slip' && approval && (
+                        <div className="mt-4 rounded-2xl bg-white p-4 border border-gray-200">
+                          <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm text-gray-500">Approval status</p>
+                              <p className="mt-1 font-semibold text-gray-900">{approval.status}</p>
+                            </div>
+                            {approval.status === 'pending' ? (
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => handleApprove(order._id, true)}
+                                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleApprove(order._id, false)}
+                                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </main>
   );
