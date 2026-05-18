@@ -102,7 +102,7 @@ router.post('/stripe-session', verifyToken, async (req, res) => {
 
     const lineItems = parsedItems.map((item) => ({
       price_data: {
-        currency: 'lkr',
+        currency: 'usd',
         product_data: {
           name: item.title,
           metadata: { productId: item._id }
