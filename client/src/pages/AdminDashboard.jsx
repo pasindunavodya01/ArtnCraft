@@ -129,20 +129,6 @@ export default function AdminDashboard() {
     return <Navigate to="/" replace />;
   }
 
-  const updateOrderStatus = async (orderId, paymentStatus) => {
-    setActionId(orderId);
-    try {
-      const res = await api.patch(`/admin/orders/${orderId}/status`, { paymentStatus });
-      setOrders((prev) => prev.map((o) => (o._id === orderId ? res.data : o)));
-      await loadStats();
-      showMessage('Order status updated.');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Unable to update order.');
-    } finally {
-      setActionId(null);
-    }
-  };
-
   const updateUserRole = async (userId, newRole) => {
     setActionId(userId);
     try {
@@ -205,6 +191,37 @@ export default function AdminDashboard() {
   const formatDate = (value) => new Date(value).toLocaleDateString('en-US', {
     year: 'numeric', month: 'short', day: 'numeric',
   });
+
+  const last7Days = (() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(today);
+      day.setDate(today.getDate() - (6 - index));
+      return {
+        key: day.toISOString().slice(0, 10),
+        label: day.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+      };
+    });
+  })();
+
+  const revenueChartData = last7Days.map((day) => ({
+    ...day,
+    revenue: orders.reduce((sum, order) => {
+      if (new Date(order.createdAt).toISOString().slice(0, 10) !== day.key) return sum;
+      return sum + (order.paymentStatus === 'paid' ? Number(order.total) : 0);
+    }, 0),
+  }));
+
+  const registrationChartData = last7Days.map((day) => ({
+    ...day,
+    count: users.reduce((sum, userItem) => {
+      return sum + (new Date(userItem.createdAt).toISOString().slice(0, 10) === day.key ? 1 : 0);
+    }, 0),
+  }));
+
+  const maxRevenue = Math.max(...revenueChartData.map((item) => item.revenue), 1);
+  const maxRegistrations = Math.max(...registrationChartData.map((item) => item.count), 1);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
@@ -280,9 +297,35 @@ export default function AdminDashboard() {
                       <StatCard label="Rejected orders" value={stats.orders.rejected} />
                       <StatCard label="Admins" value={stats.users.admins} />
                     </div>
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-                      <p className="font-semibold">Admin tip</p>
-                      <p className="mt-1">Use the Orders tab to approve bank-slip payments. Seed admin: <code className="rounded bg-amber-100 px-1">admin@artncraft.com</code> / <code className="rounded bg-amber-100 px-1">admin123</code></p>
+                    <div className="grid gap-4 xl:grid-cols-2">
+                      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                        <p className="text-sm font-semibold text-gray-500">Weekly revenue</p>
+                        <p className="mt-2 text-3xl font-bold text-gray-900">Rs. {revenueChartData.reduce((sum, item) => sum + item.revenue, 0).toFixed(2)}</p>
+                        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                          {revenueChartData.map((day) => (
+                            <div key={day.key} className="rounded-2xl bg-gray-50 p-3 text-center">
+                              <p className="text-sm font-medium text-gray-700">{day.label}</p>
+                              <p className="mt-2 text-xl font-semibold text-gray-900">Rs. {day.revenue.toFixed(0)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                        <p className="text-sm font-semibold text-gray-500">User registrations</p>
+                        <p className="mt-2 text-3xl font-bold text-gray-900">{registrationChartData.reduce((sum, item) => sum + item.count, 0)}</p>
+                        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                          {registrationChartData.map((day) => (
+                            <div key={day.key} className="rounded-2xl bg-gray-50 p-3 text-center">
+                              <p className="text-sm font-medium text-gray-700">{day.label}</p>
+                              <p className="mt-2 text-xl font-semibold text-gray-900">{day.count}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
+                      <p className="font-semibold">Admin note</p>
+                      <p className="mt-1">Track revenue and user growth on the Overview tab. Order approval is handled by sellers, so admin access remains monitoring-only.</p>
                     </div>
                   </section>
                 )}
@@ -318,16 +361,9 @@ export default function AdminDashboard() {
                               <p className="text-sm text-gray-600">{order.customerEmail} · {formatDate(order.createdAt)}</p>
                               <p className="mt-2 text-xl font-bold text-red-600">Rs. {order.total.toFixed(2)}</p>
                             </div>
-                            <select
-                              value={order.paymentStatus}
-                              disabled={actionId === order._id}
-                              onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                              className={`rounded-xl border px-3 py-2 text-sm font-semibold capitalize ${statusStyles[order.paymentStatus] || ''}`}
-                            >
-                              {PAYMENT_STATUSES.map((s) => (
-                                <option key={s} value={s}>{s.replace('_', ' ')}</option>
-                              ))}
-                            </select>
+                            <span className={`inline-flex rounded-full px-3 py-2 text-sm font-semibold capitalize ${statusStyles[order.paymentStatus] || ''}`}>
+                              {order.paymentStatus?.replace('_', ' ')}
+                            </span>
                           </div>
 
                           <p className="mt-3 text-sm text-gray-700"><span className="font-medium">Address:</span> {order.address}</p>
