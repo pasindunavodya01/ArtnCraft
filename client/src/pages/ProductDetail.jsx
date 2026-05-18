@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, ShoppingCart, Star } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Star, Flag } from 'lucide-react';
 import api from '../services/api.js';
 import ProductCard from '../components/ProductCard.jsx';
 import { useCart } from '../contexts/CartContext.jsx';
@@ -26,6 +26,12 @@ export default function ProductDetail() {
   const [inWishlist, setInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportType, setReportType] = useState('product_issue');
+  const [reportSubject, setReportSubject] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportMessage, setReportMessage] = useState('');
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -151,6 +157,39 @@ export default function ProductDetail() {
     }
   };
 
+  const handleReportSubmit = async (event) => {
+    event.preventDefault();
+    setReportMessage('');
+
+    if (!reportSubject.trim() || !reportDescription.trim()) {
+      setReportMessage('Please provide a subject and description.');
+      return;
+    }
+
+    try {
+      setReportSubmitting(true);
+      await api.post('/reports', {
+        type: reportType,
+        subject: reportSubject,
+        description: reportDescription,
+        productId: product._id,
+        sellerEmail: product.sellerEmail,
+      });
+      setReportMessage('Report submitted successfully.');
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportType('product_issue');
+        setReportSubject('');
+        setReportDescription('');
+        setReportMessage('');
+      }, 2000);
+    } catch (err) {
+      setReportMessage(err.response?.data?.message || 'Unable to submit report.');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen bg-gray-50">
@@ -255,14 +294,24 @@ export default function ProductDetail() {
                     'Unknown'
                   )}
                 </p>
-                {product.sellerEmail && (
-                  <Link
-                    to={`/seller/products?email=${encodeURIComponent(product.sellerEmail)}`}
-                    className="mt-4 inline-flex rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-gray-50 hover:text-red-700"
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {product.sellerEmail && (
+                    <Link
+                      to={`/seller/products?email=${encodeURIComponent(product.sellerEmail)}`}
+                      className="inline-flex rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-gray-50 hover:text-red-700"
+                    >
+                      View seller products
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(true)}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
                   >
-                    View seller products
-                  </Link>
-                )}
+                    <Flag size={16} />
+                    Report
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -476,6 +525,78 @@ export default function ProductDetail() {
           </aside>
         </div>
       </div>
+
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg">
+            <h2 className="text-2xl font-bold text-gray-900">Report Issue</h2>
+            <p className="mt-2 text-sm text-gray-600">Help us improve by reporting problems with this product or seller.</p>
+
+            <form onSubmit={handleReportSubmit} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Report Type</label>
+                <select
+                  value={reportType}
+                  onChange={(e) => setReportType(e.target.value)}
+                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
+                >
+                  <option value="product_issue">Product Issue</option>
+                  <option value="seller_complaint">Seller Complaint</option>
+                  <option value="technical_error">Technical Error</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Subject</label>
+                <input
+                  type="text"
+                  value={reportSubject}
+                  onChange={(e) => setReportSubject(e.target.value)}
+                  placeholder="Brief subject line"
+                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Provide details about the issue..."
+                  rows="4"
+                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
+                  required
+                />
+              </div>
+
+              {reportMessage && (
+                <div className={`rounded-lg p-3 text-sm ${reportMessage.includes('successfully') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                  {reportMessage}
+                </div>
+              )}
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reportSubmitting}
+                  className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                >
+                  {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

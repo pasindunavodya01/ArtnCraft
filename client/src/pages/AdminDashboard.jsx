@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import {
   BarChart3,
+  Flag,
   MessageSquare,
   Package,
   Shield,
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'products', label: 'Products', icon: ShoppingBag },
   { id: 'reviews', label: 'Reviews', icon: MessageSquare },
+  { id: 'reports', label: 'Reports', icon: Flag },
 ];
 
 const PAYMENT_STATUSES = ['pending', 'awaiting_approval', 'paid', 'rejected'];
@@ -45,6 +47,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -52,6 +55,7 @@ export default function AdminDashboard() {
   const [userRoleFilter, setUserRoleFilter] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('');
+  const [reportStatusFilter, setReportStatusFilter] = useState('');
   const [actionId, setActionId] = useState(null);
 
   const showMessage = (text) => {
@@ -90,6 +94,12 @@ export default function AdminDashboard() {
     setReviews(res.data);
   }, []);
 
+  const loadReports = useCallback(async () => {
+    const params = reportStatusFilter ? `?status=${reportStatusFilter}` : '';
+    const res = await api.get(`/reports${params}`);
+    setReports(res.data);
+  }, [reportStatusFilter]);
+
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (TABS.some((t) => t.id === tab)) setActiveTab(tab);
@@ -102,7 +112,7 @@ export default function AdminDashboard() {
       setLoading(true);
       setError('');
       try {
-        await Promise.all([loadStats(), loadOrders(), loadUsers(), loadProducts(), loadReviews()]);
+        await Promise.all([loadStats(), loadOrders(), loadUsers(), loadProducts(), loadReviews(), loadReports()]);
       } catch (err) {
         setError(err.response?.data?.message || 'Unable to load admin data. Ensure you are logged in as admin.');
       } finally {
@@ -110,12 +120,17 @@ export default function AdminDashboard() {
       }
     };
     loadAll();
-  }, [role, loadStats, loadOrders, loadUsers, loadProducts, loadReviews]);
+  }, [role, loadStats, loadOrders, loadUsers, loadProducts, loadReviews, loadReports]);
 
   useEffect(() => {
     if (role !== 'admin' || loading) return;
     if (activeTab === 'orders') loadOrders().catch(() => {});
   }, [orderStatusFilter, activeTab, role, loading, loadOrders]);
+
+  useEffect(() => {
+    if (role !== 'admin' || loading) return;
+    if (activeTab === 'reports') loadReports().catch(() => {});
+  }, [reportStatusFilter, activeTab, role, loading, loadReports]);
 
   if (authLoading) {
     return (
@@ -183,6 +198,48 @@ export default function AdminDashboard() {
       showMessage('Review deleted.');
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to delete review.');
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const updateReportStatus = async (reportId, newStatus) => {
+    setActionId(reportId);
+    try {
+      const res = await api.patch(`/reports/${reportId}`, { status: newStatus });
+      setReports((prev) => prev.map((r) => (r._id === reportId ? res.data : r)));
+      showMessage('Report status updated.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to update report.');
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const updateReportNotes = async (reportId, currentNotes) => {
+    const notes = window.prompt('Enter admin notes:', currentNotes || '');
+    if (notes === null) return;
+    setActionId(reportId);
+    try {
+      const res = await api.patch(`/reports/${reportId}`, { adminNotes: notes });
+      setReports((prev) => prev.map((r) => (r._id === reportId ? res.data : r)));
+      showMessage('Admin notes updated.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to update notes.');
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const deleteReport = async (reportId) => {
+    if (!window.confirm('Delete this report?')) return;
+    setActionId(reportId);
+    try {
+      await api.delete(`/reports/${reportId}`);
+      setReports((prev) => prev.filter((r) => r._id !== reportId));
+      showMessage('Report deleted.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to delete report.');
     } finally {
       setActionId(null);
     }
@@ -548,6 +605,96 @@ export default function AdminDashboard() {
                     </div>
                   </section>
                 )}
+
+                {activeTab === 'reports' && (
+                  <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">Reports</h2>
+                        <p className="mt-1 text-sm text-gray-600">{reports.length} report(s)</p>
+                      </div>
+                      <select
+                        value={reportStatusFilter}
+                        onChange={(e) => setReportStatusFilter(e.target.value)}
+                        className="rounded-xl border border-gray-300 px-4 py-2 text-sm"
+                      >
+                        <option value="">All statuses</option>
+                        <option value="open">Open</option>
+                        <option value="in_review">In Review</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="dismissed">Dismissed</option>
+                      </select>
+                    </div>
+
+                    <div className="mt-6 space-y-4">
+                      {reports.length === 0 ? (
+                        <EmptyState message="No reports match this filter." />
+                      ) : reports.map((report) => (
+                        <article key={report._id} className="rounded-2xl border border-gray-200 p-5">
+                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-gray-500">Report #{report._id.slice(-6)}</p>
+                              <p className="mt-1 font-semibold text-gray-900">{report.subject}</p>
+                              <p className="text-sm text-gray-600">{report.reporterName || report.reporterEmail} · {formatDate(report.createdAt)}</p>
+                              <div className="mt-2 flex gap-2">
+                                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold capitalize ${
+                                  report.type === 'product_issue' ? 'bg-red-100 text-red-800' :
+                                  report.type === 'seller_complaint' ? 'bg-orange-100 text-orange-800' :
+                                  report.type === 'technical_error' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {report.type?.replace('_', ' ')}
+                                </span>
+                                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold capitalize ${
+                                  report.priority === 'high' ? 'bg-red-100 text-red-800' :
+                                  report.priority === 'medium' ? 'bg-amber-100 text-amber-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {report.priority} priority
+                                </span>
+                              </div>
+                            </div>
+                            <select
+                              value={report.status}
+                              disabled={actionId === report._id}
+                              onChange={(e) => updateReportStatus(report._id, e.target.value)}
+                              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold capitalize"
+                            >
+                              <option value="open">Open</option>
+                              <option value="in_review">In Review</option>
+                              <option value="resolved">Resolved</option>
+                              <option value="dismissed">Dismissed</option>
+                            </select>
+                          </div>
+
+                          <p className="mt-3 text-sm text-gray-700"><span className="font-medium">Description:</span> {report.description}</p>
+                          {report.productId && <p className="text-sm text-gray-600">Product ID: {report.productId}</p>}
+                          {report.sellerEmail && <p className="text-sm text-gray-600">Seller: {report.sellerEmail}</p>}
+                          {report.adminNotes && <p className="mt-2 rounded-lg bg-gray-50 p-2 text-sm text-gray-700"><span className="font-medium">Admin notes:</span> {report.adminNotes}</p>}
+
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => deleteReport(report._id)}
+                              disabled={actionId === report._id}
+                              className="text-red-600 hover:text-red-700 disabled:opacity-50"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateReportNotes(report._id, report.adminNotes)}
+                              disabled={actionId === report._id}
+                              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 text-sm font-semibold"
+                            >
+                              {report.adminNotes ? 'Edit Notes' : 'Add Notes'}
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </>
             )}
           </div>
@@ -575,4 +722,3 @@ function EmptyState({ message }) {
     </div>
   );
 }
-
