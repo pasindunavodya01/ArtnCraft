@@ -394,7 +394,7 @@ export default function ProductDetail() {
               <h1 className="mt-3 text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">{product.title}</h1>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <p className="rounded-full bg-red-50 px-3 py-1.5 text-base font-bold text-red-700">${parseFloat(product.price).toFixed(2)}</p>
+                <p className="rounded-full bg-red-50 px-3 py-1.5 text-base font-bold text-red-700">Rs. {parseFloat(product.price).toFixed(2)}</p>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   {[...Array(5)].map((_, i) => (
                     <Star

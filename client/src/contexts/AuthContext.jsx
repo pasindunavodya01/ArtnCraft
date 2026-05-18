@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  const register = async ({ name, email, password, role: selectedRole }) => {
+  const register = async ({ name, email, password, mobile, role: selectedRole }) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName: name });
 
@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
     setRole(selectedRole);
     setUser({ uid: result.user.uid, email: result.user.email, name });
 
-    await api.post('/auth/register', { name, email, password, role: selectedRole });
+    await api.post('/auth/register', { name, email, password, mobile, role: selectedRole });
     return result.user;
   };
 
@@ -93,6 +93,7 @@ export function AuthProvider({ children }) {
             name: result.user.displayName || email.split('@')[0],
             email,
             password,
+            mobile: result.user.phoneNumber || '+10000000000',
             role: 'customer'
           });
         } catch (regErr) {

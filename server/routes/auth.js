@@ -8,8 +8,8 @@ const router = express.Router();
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    if (!name || !email || !password) {
+    const { name, email, password, mobile, role } = req.body;
+    if (!name || !email || !password || !mobile) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
@@ -19,10 +19,10 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashedPassword, role });
+    const user = await User.create({ name, email, password: hashedPassword, mobile, role });
     const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    res.status(201).json({ user: { id: user._id, name: user.name, email: user.email, role: user.role }, token });
+    res.status(201).json({ user: { id: user._id, name: user.name, email: user.email, mobile: user.mobile, role: user.role }, token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Registration failed' });
@@ -47,7 +47,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ user: { id: user._id, name: user.name, email: user.email, role: user.role }, token });
+    res.json({ user: { id: user._id, name: user.name, email: user.email, mobile: user.mobile, role: user.role }, token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Login failed' });
@@ -56,7 +56,7 @@ router.post('/login', async (req, res) => {
 
 router.get('/me', verifyToken, async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.user.email }).select('name email role');
+    const user = await User.findOne({ email: req.user.email }).select('name email mobile role');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -69,15 +69,16 @@ router.get('/me', verifyToken, async (req, res) => {
 
 router.put('/me', verifyToken, async (req, res) => {
   try {
-    const { name, password } = req.body;
+    const { name, password, mobile } = req.body;
     const updates = {};
     if (name) updates.name = name;
     if (password) updates.password = await bcrypt.hash(password, 10);
+    if (mobile) updates.mobile = mobile;
     if (!Object.keys(updates).length) {
       return res.status(400).json({ message: 'No profile changes provided' });
     }
 
-    const user = await User.findOneAndUpdate({ email: req.user.email }, updates, { new: true }).select('name email role');
+    const user = await User.findOneAndUpdate({ email: req.user.email }, updates, { new: true }).select('name email mobile role');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

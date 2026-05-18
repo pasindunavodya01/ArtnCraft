@@ -62,8 +62,8 @@ export default function ProductCard({ product, onAdd }) {
 
         {/* Price */}
         <div className="mt-3 flex items-baseline gap-2">
-          <span className="text-lg font-bold text-gray-900">${product.price}</span>
-          <span className="text-sm text-gray-500 line-through">${(product.price * 1.3).toFixed(2)}</span>
+          <span className="text-lg font-bold text-gray-900">Rs. {parseFloat(product.price).toFixed(2)}</span>
+          <span className="text-sm text-gray-500 line-through">Rs. {(parseFloat(product.price) * 1.3).toFixed(2)}</span>
         </div>
 
         {/* Add to Cart Button */}

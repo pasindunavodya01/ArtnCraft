@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "seed": "node scripts/seed.js",
+    "seed:mobile": "node scripts/add_mobile_to_users.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

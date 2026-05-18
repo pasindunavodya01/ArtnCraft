@@ -317,7 +317,7 @@ export default function Account() {
                               Order #{order._id.slice(-6).toUpperCase()}
                             </p>
                             <p className="mt-1 text-lg font-semibold text-gray-900">{formatDate(order.createdAt)}</p>
-                            <p className="mt-2 text-2xl font-bold text-red-600">${order.total.toFixed(2)}</p>
+                            <p className="mt-2 text-2xl font-bold text-red-600">Rs. {order.total.toFixed(2)}</p>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold capitalize text-gray-700">
@@ -342,7 +342,7 @@ export default function Account() {
                             {order.items.map((item) => (
                               <li key={`${order._id}-${item.productId}`} className="flex justify-between text-sm text-gray-700">
                                 <span>{item.title} × {item.quantity}</span>
-                                <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                                <span className="font-medium">Rs. {(item.price * item.quantity).toFixed(2)}</span>
                               </li>
                             ))}
                           </ul>
@@ -415,7 +415,7 @@ export default function Account() {
                               <p className="mt-1 text-sm text-gray-600">{product.style}{product.medium ? ` · ${product.medium}` : ''}</p>
                             )}
                             <p className="mt-2 text-xl font-bold text-red-600">
-                              ${formatPrice(getItemUnitPrice(product))}
+                              Rs. {formatPrice(getItemUnitPrice(product))}
                             </p>
                           </div>
 

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { User, Mail, Lock, UserCheck } from 'lucide-react';
 
 export default function Register() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', mobile: '', role: 'customer' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -20,7 +20,7 @@ export default function Register() {
     setLoading(true);
     setError('');
 
-    if (!form.name || !form.email || !form.password) {
+    if (!form.name || !form.email || !form.password || !form.mobile) {
       setError('Please complete every field.');
       setLoading(false);
       return;
@@ -72,6 +72,21 @@ export default function Register() {
                   type="email"
                   placeholder="you@example.com"
                   className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Mobile Number</label>
+              <div className="relative">
+                <input
+                  name="mobile"
+                  value={form.mobile}
+                  onChange={handleChange}
+                  type="tel"
+                  placeholder="e.g. +1 555 123 4567"
+                  className="w-full rounded-lg border border-gray-300 py-2.5 pl-4 pr-4 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   required
                 />
               </div>

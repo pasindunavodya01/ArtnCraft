@@ -273,7 +273,7 @@ export default function AdminDashboard() {
                       <StatCard label="Total users" value={stats.users.total} sub={`${stats.users.customers} customers · ${stats.users.sellers} sellers`} />
                       <StatCard label="Products" value={stats.products} />
                       <StatCard label="Orders" value={stats.orders.total} sub={`${stats.orders.pending} pending`} />
-                      <StatCard label="Revenue (paid)" value={`$${stats.orders.revenue?.toFixed(2) || '0.00'}`} sub={`${stats.orders.paid} paid orders`} />
+                      <StatCard label="Revenue (paid)" value={`Rs. ${stats.orders.revenue?.toFixed(2) || '0.00'}`} sub={`${stats.orders.paid} paid orders`} />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-3">
                       <StatCard label="Reviews" value={stats.reviews} icon={MessageSquare} />
@@ -316,7 +316,7 @@ export default function AdminDashboard() {
                               <p className="text-xs font-semibold uppercase text-gray-500">#{order._id.slice(-6)}</p>
                               <p className="mt-1 font-semibold text-gray-900">{order.customerName || order.customerEmail}</p>
                               <p className="text-sm text-gray-600">{order.customerEmail} · {formatDate(order.createdAt)}</p>
-                              <p className="mt-2 text-xl font-bold text-red-600">${order.total.toFixed(2)}</p>
+                              <p className="mt-2 text-xl font-bold text-red-600">Rs. {order.total.toFixed(2)}</p>
                             </div>
                             <select
                               value={order.paymentStatus}
@@ -347,7 +347,7 @@ export default function AdminDashboard() {
                             {order.items.map((item) => (
                               <li key={`${order._id}-${item.productId}`} className="flex justify-between">
                                 <span>{item.title} × {item.quantity}</span>
-                                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                <span>Rs. {(item.price * item.quantity).toFixed(2)}</span>
                               </li>
                             ))}
                           </ul>
@@ -462,7 +462,7 @@ export default function AdminDashboard() {
                               {product.title}
                             </Link>
                             <p className="text-sm text-gray-600">Seller: {product.sellerEmail}</p>
-                            <p className="mt-1 font-bold text-red-600">${product.price}</p>
+                            <p className="mt-1 font-bold text-red-600">Rs. {product.price}</p>
                           </div>
                           <button
                             type="button"

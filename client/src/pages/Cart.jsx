@@ -61,7 +61,7 @@ export default function Cart() {
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{item.title}</h3>
                       <p className="mt-1 text-sm text-gray-600">{item.category}</p>
-                      <p className="mt-2 text-lg font-bold text-gray-900">${formatPrice(getItemUnitPrice(item))}</p>
+                      <p className="mt-2 text-lg font-bold text-gray-900">Rs. {formatPrice(getItemUnitPrice(item))}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <input
@@ -96,7 +96,7 @@ export default function Cart() {
               <div className="mt-6 space-y-4 border-t border-gray-200 pt-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold text-gray-900">${total.toFixed(2)}</span>
+                  <span className="font-semibold text-gray-900">Rs. {total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
@@ -104,13 +104,13 @@ export default function Cart() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span className="font-semibold text-gray-900">${(total * 0.1).toFixed(2)}</span>
+                  <span className="font-semibold text-gray-900">Rs. {(total * 0.1).toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="mt-6 border-t border-gray-200 pt-6 flex justify-between">
                 <span className="text-lg font-bold text-gray-900">Total</span>
-                <span className="text-2xl font-bold text-red-600">${(total * 1.1).toFixed(2)}</span>
+                <span className="text-2xl font-bold text-red-600">Rs. {(total * 1.1).toFixed(2)}</span>
               </div>
 
               <button

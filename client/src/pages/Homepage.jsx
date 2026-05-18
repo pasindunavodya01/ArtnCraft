@@ -336,11 +336,11 @@ export default function Homepage() {
                 className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
               >
                 <option value="">All prices</option>
-                <option value="0-50">$0 - $50</option>
-                <option value="50-100">$50 - $100</option>
-                <option value="100-200">$100 - $200</option>
-                <option value="200-500">$200 - $500</option>
-                <option value="500+">$500+</option>
+                <option value="0-50">Rs. 0 - Rs. 50</option>
+                <option value="50-100">Rs. 50 - Rs. 100</option>
+                <option value="100-200">Rs. 100 - Rs. 200</option>
+                <option value="200-500">Rs. 200 - Rs. 500</option>
+                <option value="500+">Rs. 500+</option>
               </select>
               <select
                 value={sortOrder}

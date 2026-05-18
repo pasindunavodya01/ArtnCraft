@@ -215,7 +215,7 @@ export default function SellerDashboard() {
     },
     {
       label: 'Total Value',
-      value: `$${products.reduce((sum, p) => sum + parseFloat(p.price || 0), 0).toFixed(2)}`,
+      value: `Rs. ${products.reduce((sum, p) => sum + parseFloat(p.price || 0), 0).toFixed(2)}`,
       icon: TrendingUp,
       color: 'bg-green-100',
       textColor: 'text-green-600',
@@ -323,7 +323,7 @@ export default function SellerDashboard() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price ($) *
+                  Price (Rs.) *
                 </label>
                 <input
                   type="number"
@@ -465,7 +465,7 @@ export default function SellerDashboard() {
                     </h3>
                     <p className="mt-1 text-sm text-gray-600">{product.category}</p>
                     <p className="mt-2 text-lg font-bold text-red-600">
-                      ${parseFloat(product.price).toFixed(2)}
+                      Rs. {parseFloat(product.price).toFixed(2)}
                     </p>
                     <p className="mt-2 text-sm text-gray-600 line-clamp-2">
                       {product.description}
@@ -542,7 +542,7 @@ export default function SellerDashboard() {
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Total</p>
-                        <p className="mt-1 text-gray-900">${order.total.toFixed(2)}</p>
+                        <p className="mt-1 text-gray-900">Rs. {order.total.toFixed(2)}</p>
                       </div>
                     </div>
 
