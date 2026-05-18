@@ -28,7 +28,13 @@ export default function Register() {
 
     try {
       await register(form);
-      navigate('/');
+      if (form.role === 'admin') {
+        navigate('/admin');
+      } else if (form.role === 'seller') {
+        navigate('/seller');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError('Registration failed. Try another email address.');
     } finally {

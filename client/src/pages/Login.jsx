@@ -23,7 +23,14 @@ export default function Login() {
 
     try {
       await login(form);
-      navigate('/');
+      const userRole = localStorage.getItem(`role:${form.email}`) || 'customer';
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else if (userRole === 'seller') {
+        navigate('/seller');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError('Login failed. Please check your credentials.');
     } finally {

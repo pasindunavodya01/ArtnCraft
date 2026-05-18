@@ -9,13 +9,9 @@ export default function Homepage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [productForm, setProductForm] = useState({
-    title: '', description: '', category: '', style: '', medium: '', tags: '', price: '', images: [],
-  });
   const [recommendations, setRecommendations] = useState([]);
   const [recLoading, setRecLoading] = useState(false);
   const [preferences, setPreferences] = useState(null);
-  const [success, setSuccess] = useState('');
   const [categories, setCategories] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -101,60 +97,16 @@ export default function Homepage() {
     setSearchParams({});
   };
 
-  const handleInput = (event) => {
-    const { name, value, files } = event.target;
-    if (name === 'images') {
-      setProductForm((prev) => ({ ...prev, images: files ? Array.from(files) : [] }));
-      return;
-    }
-    setProductForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleProductSubmit = async (event) => {
-    event.preventDefault();
-    if (!productForm.images?.length) {
-      setError('Please choose at least one image for the product.');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('title', productForm.title);
-    formData.append('description', productForm.description);
-    formData.append('category', productForm.category);
-    formData.append('style', productForm.style);
-    formData.append('medium', productForm.medium);
-    formData.append('tags', productForm.tags);
-    formData.append('price', productForm.price);
-    productForm.images.forEach((image) => formData.append('images', image));
-
-    try {
-      const token = authTokenFromStorage();
-      if (token) {
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
-      }
-      const response = await api.post('/products/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setProducts((prev) => [response.data, ...prev]);
-      setSuccess('Product added successfully.');
-      setProductForm({
-        title: '', description: '', category: '', style: '', medium: '', tags: '', price: '', images: [],
-      });
-    } catch (err) {
-      setError('Unable to add product. Ensure you are logged in as a seller.');
-    }
-  };
-
-  const authTokenFromStorage = () => localStorage.getItem('ecommerce-api-token');
-
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Hero Banner */}
-      <section className="bg-gradient-to-r from-red-600 to-red-700 text-white py-12">
+      <section className="bg-gradient-to-r from-red-600 to-red-700 text-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
-              <h1 className="text-4xl font-bold sm:text-5xl">Summer Mega Sale</h1>
-              <p className="mt-4 text-lg text-red-50">Up to 70% off on our best sellers!</p>
-              <p className="mt-2 text-sm text-red-100">Limited time offer - Shop now and save big</p>
+              <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Support Local Artisans & Crafters</h1>
+              <p className="mt-4 text-lg text-red-50">Discover unique, handcrafted items from self-employed painters, hand crafters, and independent artists.</p>
+              <p className="mt-2 text-sm text-red-100">Shop directly from creators and empower local businesses today.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a href="#products" className="rounded-md bg-white px-6 py-3 font-bold text-red-600 transition hover:bg-gray-50">
                   Shop Now
@@ -170,7 +122,7 @@ export default function Homepage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-lg bg-red-50 p-4">
                   <p className="text-2xl font-bold text-red-600">{products.length}</p>
-                  <p className="text-sm text-gray-600">Products</p>
+                  <p className="text-sm text-gray-600">Local Creations</p>
                 </div>
                 <div className="rounded-lg bg-red-50 p-4">
                   <p className="text-2xl font-bold text-red-600">{user ? role.charAt(0).toUpperCase() + role.slice(1) : 'Join'}</p>
@@ -184,88 +136,6 @@ export default function Homepage() {
 
       {/* Main Content */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        {/* Seller Dashboard */}
-        {role === 'seller' && (
-          <div className="mb-12 rounded-lg border border-gray-200 bg-white p-8 shadow-md">
-            <h2 className="text-2xl font-bold text-gray-900">Upload New Product</h2>
-            <p className="mt-2 text-gray-600">Add your products to our marketplace</p>
-            <form onSubmit={handleProductSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
-              <input
-                name="title"
-                value={productForm.title}
-                onChange={handleInput}
-                placeholder="Product title"
-                required
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-              <input
-                name="category"
-                value={productForm.category}
-                onChange={handleInput}
-                placeholder="Category (e.g. Paintings)"
-                required
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-              <input
-                name="style"
-                value={productForm.style}
-                onChange={handleInput}
-                placeholder="Style (e.g. Abstract)"
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-              <input
-                name="medium"
-                value={productForm.medium}
-                onChange={handleInput}
-                placeholder="Medium (e.g. Oil on canvas)"
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-              <input
-                name="tags"
-                value={productForm.tags}
-                onChange={handleInput}
-                placeholder="Tags (comma-separated)"
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-              <input
-                name="price"
-                value={productForm.price}
-                onChange={handleInput}
-                placeholder="Price"
-                type="number"
-                required
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-              <input
-                name="images"
-                onChange={handleInput}
-                type="file"
-                accept="image/*"
-                multiple
-                required
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-              <textarea
-                name="description"
-                value={productForm.description}
-                onChange={handleInput}
-                rows="4"
-                placeholder="Product description"
-                required
-                className="col-span-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              ></textarea>
-              <button
-                type="submit"
-                className="col-span-full rounded-lg bg-red-600 px-6 py-3 font-bold text-white transition hover:bg-red-700"
-              >
-                Upload Product
-              </button>
-            </form>
-            {success && <p className="mt-4 rounded-lg bg-green-50 p-3 text-green-800">{success}</p>}
-            {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
-          </div>
-        )}
-
         {user && role === 'customer' && (
           <section className="mb-12">
             <div className="mb-6">
@@ -292,7 +162,7 @@ export default function Homepage() {
               </div>
             ) : (
               <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
-                Browse artworks, add items to your wishlist or cart, and we&apos;ll personalize recommendations.
+                Browse local crafts and artworks, add items to your wishlist or cart, and we&apos;ll personalize recommendations just for you.
               </p>
             )}
           </section>
@@ -302,15 +172,15 @@ export default function Homepage() {
         <section id="products">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
-              <p className="mt-2 text-gray-600">Discover our best-selling items</p>
+              <h2 className="text-3xl font-bold text-gray-900">Featured Local Creations</h2>
+              <p className="mt-2 text-gray-600">Discover unique items made by self-employed creators</p>
             </div>
             <form onSubmit={handleFilterSubmit} className="grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr_1fr_1fr] w-full max-w-7xl">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search products or sellers"
+                placeholder="Search artworks, crafts, or local sellers"
                 className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
               />
               <input
