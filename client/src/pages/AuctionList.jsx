@@ -340,7 +340,6 @@ export default function AuctionList() {
                 );
               })}
             </div>
-
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="mt-12 flex items-center justify-center gap-1.5 pb-8 border-t border-gray-250 pt-6">
@@ -354,24 +353,31 @@ export default function AuctionList() {
                   Prev
                 </button>
 
-                {/* Page Number Buttons */}
-                {Array.from({ length: totalPages }, (_, index) => {
-                  const pageNum = index + 1;
-                  return (
-                    <button
-                      key={pageNum}
-                      type="button"
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
-                        currentPage === pageNum
-                          ? 'bg-red-600 text-white shadow-sm'
-                          : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
+                {/* Mobile Page Indicator */}
+                <span className="inline-flex sm:hidden items-center justify-center h-10 px-4 rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                {/* Desktop Page Number Buttons */}
+                <div className="hidden sm:flex items-center gap-1.5">
+                  {Array.from({ length: totalPages }, (_, index) => {
+                    const pageNum = index + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
+                          currentPage === pageNum
+                            ? 'bg-red-600 text-white shadow-sm'
+                            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
 
                 {/* Next Button */}
                 <button

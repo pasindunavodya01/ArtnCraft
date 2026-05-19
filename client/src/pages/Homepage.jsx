@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Gavel, ArrowRight } from 'lucide-react';
 import api from '../services/api.js';
 import ProductCard from '../components/ProductCard.jsx';
 import { useCart } from '../contexts/CartContext.jsx';
@@ -130,6 +131,9 @@ export default function Homepage() {
                 <a href="#products" className="rounded-md bg-white px-6 py-3 font-bold text-red-600 transition hover:bg-gray-50">
                   Shop Now
                 </a>
+                <Link to="/auctions" className="rounded-md border-2 border-white px-6 py-3 font-bold text-white transition hover:bg-white hover:text-red-600 flex items-center gap-2">
+                  <Gavel size={18} /> Visit Auctions
+                </Link>
                 {!user && (
                   <a href="/register" className="rounded-md border-2 border-white px-6 py-3 font-bold text-white transition hover:bg-white hover:text-red-600">
                     Sign Up
@@ -137,16 +141,28 @@ export default function Homepage() {
                 )}
               </div>
             </div>
-            <div className="rounded-lg overflow-hidden bg-white p-6 shadow-lg">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-lg bg-red-50 p-4">
-                  <p className="text-2xl font-bold text-red-600">{products.length}</p>
-                  <p className="text-sm text-gray-600">Local Creations</p>
-                </div>
-                <div className="rounded-lg bg-red-50 p-4">
-                  <p className="text-2xl font-bold text-red-600">{user ? role.charAt(0).toUpperCase() + role.slice(1) : 'Join'}</p>
-                  <p className="text-sm text-gray-600">Your Role</p>
-                </div>
+            <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-xl border border-red-100 flex flex-col justify-between">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-ping" />
+                  Live Auctions Arena
+                </span>
+                <h3 className="mt-4 text-2xl font-black text-gray-900 leading-tight">
+                  Bid Real-Time on Handcrafted Masterpieces
+                </h3>
+                <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                  Join dynamic live auctions for premium, one-of-a-kind local creations. Connect directly with independent creators and place your winning bid today.
+                </p>
+              </div>
+              <div className="mt-8">
+                <Link
+                  to="/auctions"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 font-bold text-white transition duration-300 hover:from-red-700 hover:to-red-800 active:scale-95 shadow-md shadow-red-600/10 group"
+                >
+                  <Gavel size={18} className="group-hover:rotate-12 transition duration-300" />
+                  Enter Bidding Arena
+                  <ArrowRight size={16} className="group-hover:translate-x-1 transition duration-300" />
+                </Link>
               </div>
             </div>
           </div>
@@ -165,7 +181,7 @@ export default function Homepage() {
               {preferences?.topCategories?.length > 0 && (
                 <p className="mt-2 text-sm text-gray-500">
                   Preferences: {preferences.topCategories.map((c) => c.name).join(', ')}
-                  {preferences.priceRange && ` · $${preferences.priceRange.min.toFixed(0)}–$${preferences.priceRange.max.toFixed(0)}`}
+                  {preferences.priceRange && ` · Rs.${preferences.priceRange.min.toFixed(0)}–Rs.${preferences.priceRange.max.toFixed(0)}`}
                 </p>
               )}
             </div>
@@ -291,23 +307,31 @@ export default function Homepage() {
                     Prev
                   </button>
 
-                  {Array.from({ length: totalPages }, (_, index) => {
-                    const pageNum = index + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        type="button"
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
-                          currentPage === pageNum
-                            ? 'bg-red-600 text-white shadow-sm'
-                            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+                  {/* Mobile Page Indicator */}
+                  <span className="inline-flex sm:hidden items-center justify-center h-10 px-4 rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  {/* Desktop Page Number Buttons */}
+                  <div className="hidden sm:flex items-center gap-1.5">
+                    {Array.from({ length: totalPages }, (_, index) => {
+                      const pageNum = index + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
+                            currentPage === pageNum
+                              ? 'bg-red-600 text-white shadow-sm'
+                              : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
 
                   <button
                     type="button"

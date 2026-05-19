@@ -875,23 +875,31 @@ export default function SellerDashboard() {
                       Prev
                     </button>
 
-                    {Array.from({ length: totalProductsPages }, (_, index) => {
-                      const pageNum = index + 1;
-                      return (
-                        <button
-                          key={pageNum}
-                          type="button"
-                          onClick={() => handleProductsPageChange(pageNum)}
-                          className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
-                            productsPage === pageNum
-                              ? 'bg-red-600 text-white shadow-sm'
-                              : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                    {/* Mobile Page Indicator */}
+                    <span className="inline-flex sm:hidden items-center justify-center h-10 px-4 rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700">
+                      Page {productsPage} of {totalProductsPages}
+                    </span>
+
+                    {/* Desktop Page Number Buttons */}
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      {Array.from({ length: totalProductsPages }, (_, index) => {
+                        const pageNum = index + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => handleProductsPageChange(pageNum)}
+                            className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
+                              productsPage === pageNum
+                                ? 'bg-red-600 text-white shadow-sm'
+                                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
 
                     <button
                       type="button"
@@ -1108,23 +1116,31 @@ export default function SellerDashboard() {
                       Prev
                     </button>
 
-                    {Array.from({ length: totalAuctionsPages }, (_, index) => {
-                      const pageNum = index + 1;
-                      return (
-                        <button
-                          key={pageNum}
-                          type="button"
-                          onClick={() => handleAuctionsPageChange(pageNum)}
-                          className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
-                            auctionsPage === pageNum
-                              ? 'bg-red-600 text-white shadow-sm'
-                              : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                    {/* Mobile Page Indicator */}
+                    <span className="inline-flex sm:hidden items-center justify-center h-10 px-4 rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700">
+                      Page {auctionsPage} of {totalAuctionsPages}
+                    </span>
+
+                    {/* Desktop Page Number Buttons */}
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      {Array.from({ length: totalAuctionsPages }, (_, index) => {
+                        const pageNum = index + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => handleAuctionsPageChange(pageNum)}
+                            className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
+                              auctionsPage === pageNum
+                                ? 'bg-red-600 text-white shadow-sm'
+                                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
 
                     <button
                       type="button"
