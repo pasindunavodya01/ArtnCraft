@@ -111,6 +111,9 @@ export default function Navbar() {
                 <NavLink to="/" end className={navLinkClass}>
                   Shop
                 </NavLink>
+                <NavLink to="/auctions" className={navLinkClass}>
+                  Auctions
+                </NavLink>
                 <NavLink to="/cart" className="group flex flex-col items-center gap-0.5 text-gray-700 hover:text-red-600">
                   <ShoppingCart size={22} />
                   <span className="text-xs font-semibold">Cart</span>
@@ -159,6 +162,9 @@ export default function Navbar() {
           <div className="mt-3 flex gap-4 border-t border-gray-100 pt-3 lg:hidden">
             <NavLink to="/" end className={navLinkClass}>
               Shop
+            </NavLink>
+            <NavLink to="/auctions" className={navLinkClass}>
+              Auctions
             </NavLink>
             {user && (
               <NavLink to="/account" className={navLinkClass}>

@@ -13,6 +13,9 @@ import StripeSuccess from './pages/StripeSuccess.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Account from './pages/Account.jsx';
+import AuctionList from './pages/AuctionList.jsx';
+import AuctionDetail from './pages/AuctionDetail.jsx';
+import PayExistingOrder from './pages/PayExistingOrder.jsx';
 
 function App() {
   return (
@@ -33,6 +36,9 @@ function App() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/account" element={<Account />} />
               <Route path="/stripe-success" element={<StripeSuccess />} />
+              <Route path="/auctions" element={<AuctionList />} />
+              <Route path="/auctions/:id" element={<AuctionDetail />} />
+              <Route path="/pay-order/:id" element={<PayExistingOrder />} />
             </Routes>
           </BrowserRouter>
         </div>

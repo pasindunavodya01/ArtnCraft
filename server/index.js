@@ -12,6 +12,8 @@ import interactionRoutes from './routes/interactions.js';
 import wishlistRoutes from './routes/wishlist.js';
 import adminRoutes from './routes/admin.js';
 import reportRoutes from './routes/reports.js';
+import auctionRoutes from './routes/auctions.js';
+import { startAuctionScheduler } from './services/auctionScheduler.js';
 import { isFirebaseAdminAvailable } from './utils/firebaseAdmin.js';
 
 const app = express();
@@ -32,6 +34,7 @@ app.use('/api/interactions', interactionRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/auctions', auctionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK' });
@@ -50,4 +53,5 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Stripe secret key is ${STRIPE_KEY_STATUS}`);
   console.log(`Firebase Admin is ${isFirebaseAdminAvailable() ? 'initialized' : 'not initialized'}`);
+  startAuctionScheduler();
 });

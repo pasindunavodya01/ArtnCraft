@@ -1,8 +1,8 @@
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import api from '../services/api.js';
-import { Upload, Package, Trash2, Edit, Plus, TrendingUp } from 'lucide-react';
+import { Upload, Package, Trash2, Edit, Plus, TrendingUp, Gavel, Calendar, Clock } from 'lucide-react';
 
 export default function SellerDashboard() {
   const { user, role, loading: authLoading } = useAuth();
@@ -28,6 +28,29 @@ export default function SellerDashboard() {
   const [orderError, setOrderError] = useState('');
   const [activeTab, setActiveTab] = useState('products');
 
+  // Auction specific states
+  const [auctions, setAuctions] = useState([]);
+  const [loadingAuctions, setLoadingAuctions] = useState(true);
+  const [showAuctionForm, setShowAuctionForm] = useState(false);
+  const [auctionForm, setAuctionForm] = useState({
+    productId: '',
+    startingBid: '',
+    reservePrice: '',
+    startTime: '',
+    endTime: ''
+  });
+  const [auctionError, setAuctionError] = useState('');
+  const [auctionSuccess, setAuctionSuccess] = useState('');
+  const [submittingAuction, setSubmittingAuction] = useState(false);
+
+  useEffect(() => {
+    if (role === 'seller' && user?.email) {
+      loadSellerProducts();
+      loadSellerOrders();
+      loadSellerAuctions();
+    }
+  }, [role, user?.email]);
+
   if (authLoading) {
     return null;
   }
@@ -35,13 +58,6 @@ export default function SellerDashboard() {
   if (role !== 'seller') {
     return <Navigate to="/" replace />;
   }
-
-  useEffect(() => {
-    if (role === 'seller' && user?.email) {
-      loadSellerProducts();
-      loadSellerOrders();
-    }
-  }, [role, user?.email]);
 
   const loadSellerProducts = async () => {
     try {
@@ -206,6 +222,67 @@ export default function SellerDashboard() {
     }
   };
 
+  const loadSellerAuctions = async () => {
+    try {
+      setLoadingAuctions(true);
+      const token = localStorage.getItem('ecommerce-api-token');
+      if (token) {
+        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      }
+      const response = await api.get('/auctions');
+      const sellerEmail = user?.email?.toLowerCase();
+      const filtered = response.data.filter(a => a.sellerEmail?.toLowerCase() === sellerEmail);
+      setAuctions(filtered);
+    } catch (err) {
+      console.error(err);
+      setAuctionError('Failed to load your auctions');
+    } finally {
+      setLoadingAuctions(false);
+    }
+  };
+
+  const handleAuctionSubmit = async (e) => {
+    e.preventDefault();
+    setAuctionError('');
+    setAuctionSuccess('');
+
+    const { productId, startingBid, reservePrice, startTime, endTime } = auctionForm;
+
+    if (!productId || !startingBid || !startTime || !endTime) {
+      setAuctionError('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmittingAuction(true);
+      const token = localStorage.getItem('ecommerce-api-token');
+      if (token) {
+        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      }
+      await api.post('/auctions', {
+        productId,
+        startingBid: Number(startingBid),
+        reservePrice: reservePrice ? Number(reservePrice) : undefined,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString()
+      });
+      setAuctionSuccess('Auction created successfully!');
+      setAuctionForm({ productId: '', startingBid: '', reservePrice: '', startTime: '', endTime: '' });
+      setShowAuctionForm(false);
+      loadSellerAuctions();
+      setTimeout(() => setAuctionSuccess(''), 3000);
+    } catch (err) {
+      setAuctionError(err.response?.data?.message || 'Failed to create auction');
+    } finally {
+      setSubmittingAuction(false);
+    }
+  };
+
+  const handleAuctionInputChange = (e) => {
+    const { name, value } = e.target;
+    setAuctionForm((prev) => ({ ...prev, [name]: value }));
+  };
+
   const orderStats = [
     {
       label: 'Total Orders',
@@ -297,15 +374,24 @@ export default function SellerDashboard() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
-            <p className="mt-2 text-gray-600">Welcome back, {user?.name}! Manage your products and store orders.</p>
+            <p className="mt-2 text-gray-600">Welcome back, {user?.name}! Manage your products, store orders, and active auctions.</p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 font-bold text-white transition hover:bg-red-700"
-          >
-            <Plus size={20} />
-            Add Product
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => { setShowForm(!showForm); setShowAuctionForm(false); }}
+              className="flex items-center gap-2 rounded-lg bg-slate-800 border border-slate-700 px-5 py-2.5 font-bold text-white transition hover:bg-slate-700"
+            >
+              <Plus size={18} />
+              Add Product
+            </button>
+            <button
+              onClick={() => { setShowAuctionForm(!showAuctionForm); setShowForm(false); }}
+              className="flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 font-bold text-white transition hover:bg-red-700 shadow-md shadow-red-950/20"
+            >
+              <Gavel size={18} />
+              Create Auction
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -323,6 +409,13 @@ export default function SellerDashboard() {
             className={`rounded-full px-5 py-2 text-sm font-semibold transition ${activeTab === 'orders' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
           >
             Seller Orders
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('auctions')}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${activeTab === 'auctions' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            My Auctions
           </button>
         </div>
 
@@ -394,6 +487,137 @@ export default function SellerDashboard() {
           <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-800">
             <p className="font-medium">Success</p>
             <p className="text-sm">{success}</p>
+          </div>
+        )}
+
+        {auctionError && (
+          <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">
+            <p className="font-medium">Auction Error</p>
+            <p className="text-sm">{auctionError}</p>
+          </div>
+        )}
+        {auctionSuccess && (
+          <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-800">
+            <p className="font-medium">Auction Success</p>
+            <p className="text-sm">{auctionSuccess}</p>
+          </div>
+        )}
+
+        {/* Create Auction Form */}
+        {showAuctionForm && (
+          <div className="mb-8 rounded-lg border border-gray-200 bg-white p-8 shadow-md">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+                <Gavel size={24} className="text-red-600" />
+                Create New Auction
+              </h2>
+              <button
+                onClick={() => setShowAuctionForm(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleAuctionSubmit} className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Artwork *
+                </label>
+                <select
+                  name="productId"
+                  value={auctionForm.productId}
+                  onChange={handleAuctionInputChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 bg-white"
+                  required
+                >
+                  <option value="">-- Choose one of your artworks --</option>
+                  {products.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.title} (Rs. {parseFloat(p.price).toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Starting Bid (Rs.) *
+                </label>
+                <input
+                  type="number"
+                  name="startingBid"
+                  value={auctionForm.startingBid}
+                  onChange={handleAuctionInputChange}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reserve Price (Rs.) - Optional
+                </label>
+                <input
+                  type="number"
+                  name="reservePrice"
+                  value={auctionForm.reservePrice}
+                  onChange={handleAuctionInputChange}
+                  placeholder="No reserve price"
+                  step="0.01"
+                  min="0"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Auction Start Time *
+                </label>
+                <input
+                  type="datetime-local"
+                  name="startTime"
+                  value={auctionForm.startTime}
+                  onChange={handleAuctionInputChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Auction End Time *
+                </label>
+                <input
+                  type="datetime-local"
+                  name="endTime"
+                  value={auctionForm.endTime}
+                  onChange={handleAuctionInputChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  required
+                />
+              </div>
+
+              <div className="sm:col-span-2 flex gap-3 mt-4">
+                <button
+                  type="submit"
+                  disabled={submittingAuction}
+                  className="flex-1 rounded-lg bg-red-600 px-6 py-3 font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                >
+                  {submittingAuction ? 'Creating...' : 'Start Auction'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAuctionForm(false)}
+                  className="flex-1 rounded-lg border border-gray-300 px-6 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
@@ -549,8 +773,7 @@ export default function SellerDashboard() {
             </form>
           </div>
         )}
-
-        {activeTab === 'products' ? (
+        {activeTab === 'products' && (
           <div>
             <h2 className="mb-6 text-2xl font-bold text-gray-900">Your Products</h2>
 
@@ -615,7 +838,9 @@ export default function SellerDashboard() {
               </div>
             )}
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'orders' && (
           <div className="mt-4">
             <h2 className="mb-6 text-2xl font-bold text-gray-900">Seller Orders</h2>
 
@@ -720,6 +945,83 @@ export default function SellerDashboard() {
                           </div>
                         </div>
                       )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'auctions' && (
+          <div className="mt-4">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900">Your Auctions</h2>
+
+            {loadingAuctions ? (
+              <div className="flex justify-center py-12">
+                <div className="text-center">
+                  <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-red-600"></div>
+                  <p className="mt-4 text-gray-600">Loading auctions...</p>
+                </div>
+              </div>
+            ) : auctions.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-white p-12 text-center shadow">
+                <Gavel size={48} className="mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600">No auctions created yet. Click "Create Auction" to start listing artworks for bidding!</p>
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {auctions.map((auction) => {
+                  const product = auction.productId;
+                  if (!product) return null;
+
+                  return (
+                    <div key={auction._id} className="rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition flex flex-col justify-between">
+                      <div>
+                        <div className="relative h-40 overflow-hidden bg-gray-100 border-b border-gray-200">
+                          <img
+                            src={product.images?.[0] || 'https://via.placeholder.com/400x300'}
+                            alt={product.title}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2">
+                            <span className={`inline-block px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider text-white shadow-md ${
+                              auction.status === 'active' ? 'bg-green-600' : auction.status === 'pending' ? 'bg-blue-600' : 'bg-slate-700'
+                            }`}>
+                              {auction.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-4">
+                          <h3 className="font-semibold text-gray-900 truncate">{product.title}</h3>
+                          
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs border border-gray-100 rounded-lg p-2.5 bg-gray-50">
+                            <div>
+                              <p className="text-gray-400 uppercase font-bold text-[9px] tracking-wide">Starting Bid</p>
+                              <p className="font-semibold text-gray-700 mt-0.5">Rs. {auction.startingBid.toFixed(2)}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400 uppercase font-bold text-[9px] tracking-wide">Highest Bid</p>
+                              <p className="font-bold text-red-600 mt-0.5">Rs. {auction.highestBid.toFixed(2)}</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 space-y-1 text-xs text-gray-600">
+                            <p className="flex items-center gap-1.5"><Clock size={13} className="text-gray-400" /> Start: {new Date(auction.startTime).toLocaleString()}</p>
+                            <p className="flex items-center gap-1.5"><Clock size={13} className="text-gray-400" /> End: {new Date(auction.endTime).toLocaleString()}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 pt-0">
+                        <Link
+                          to={`/auctions/${auction._id}`}
+                          className="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 py-2.5 text-xs font-bold text-gray-800 transition"
+                        >
+                          <Gavel size={14} /> View Arena & Bids ({auction.bids?.length || 0})
+                        </Link>
+                      </div>
                     </div>
                   );
                 })}

@@ -347,6 +347,20 @@ export default function Account() {
                             ))}
                           </ul>
                         )}
+
+                        {order.paymentStatus === 'pending' && (
+                          <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
+                            <p className="text-xs text-amber-600 font-semibold flex items-center gap-1">
+                              <Sparkles size={14} className="animate-pulse" /> Complete checkout to claim your masterpiece!
+                            </p>
+                            <Link
+                              to={`/pay-order/${order._id}`}
+                              className="inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-red-700 active:scale-95 shadow-md shadow-red-950/20"
+                            >
+                              Complete Payment
+                            </Link>
+                          </div>
+                        )}
                       </article>
                     ))}
                   </div>

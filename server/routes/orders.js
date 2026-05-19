@@ -138,6 +138,99 @@ router.post('/stripe-session', verifyToken, async (req, res) => {
   }
 });
 
+// STRIPE SESSION FOR EXISTING ORDER
+router.post('/:id/stripe-session', verifyToken, async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(500).json({ message: 'Stripe is not configured on the server' });
+    }
+
+    const { id } = req.params;
+    const { address, returnUrl } = req.body;
+
+    if (!address || !returnUrl) {
+      return res.status(400).json({ message: 'Incomplete Stripe checkout details' });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.customerEmail !== req.user.email) {
+      return res.status(403).json({ message: 'Not authorized to checkout this order' });
+    }
+
+    const lineItems = order.items.map((item) => ({
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: item.title,
+          metadata: { productId: item.productId }
+        },
+        unit_amount: Math.round(Number(item.price) * 100),
+      },
+      quantity: item.quantity,
+    }));
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: returnUrl,
+      customer_email: req.user.email,
+      metadata: {
+        existingOrderId: order._id.toString(),
+        address
+      }
+    });
+
+    res.json({ url: session.url, sessionId: session.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Unable to initialize Stripe checkout for existing order' });
+  }
+});
+
+// BANK SLIP PAYMENT FOR EXISTING ORDER
+router.post('/:id/pay-existing', verifyToken, upload.array('receipts', 5), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { address } = req.body;
+
+    if (!address) {
+      return res.status(400).json({ message: 'Shipping address is required' });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.customerEmail !== req.user.email) {
+      return res.status(403).json({ message: 'Not authorized to pay for this order' });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'Please upload a bank slip or payment screenshot' });
+    }
+
+    const receiptUrls = await getUploadedImages(req.files);
+
+    order.address = address;
+    order.paymentMethod = 'bank-slip';
+    order.paymentStatus = 'awaiting_approval';
+    order.receiptUrls = receiptUrls;
+
+    await order.save();
+    res.json(order);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to upload receipt and pay' });
+  }
+});
+
 router.post('/stripe-confirm', verifyToken, async (req, res) => {
   try {
     if (!stripe) {
@@ -157,6 +250,27 @@ router.post('/stripe-confirm', verifyToken, async (req, res) => {
     const existingOrder = await Order.findOne({ stripeSessionId: session.id });
     if (existingOrder) {
       return res.json(existingOrder);
+    }
+
+    // Check if this is for an existing pending order (e.g. auction win)
+    if (session.metadata?.existingOrderId) {
+      const order = await Order.findById(session.metadata.existingOrderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      order.address = session.metadata.address;
+      order.paymentMethod = 'stripe';
+      order.paymentStatus = 'paid';
+      order.stripeSessionId = session.id;
+      // Mark all approvals as approved since Stripe is paid
+      order.sellerApprovals = order.sellerApprovals.map((appr) => ({
+        sellerEmail: appr.sellerEmail,
+        status: 'approved'
+      }));
+
+      await order.save();
+      return res.json(order);
     }
 
     const payload = JSON.parse(session.metadata?.orderPayload || '{}');
