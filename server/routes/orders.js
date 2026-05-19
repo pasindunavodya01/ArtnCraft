@@ -9,6 +9,7 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
+const stripeCurrency = (process.env.STRIPE_CURRENCY || 'lkr').toLowerCase();
 
 const uploadBuffer = (buffer) => {
   return new Promise((resolve, reject) => {
@@ -102,7 +103,7 @@ router.post('/stripe-session', verifyToken, async (req, res) => {
 
     const lineItems = parsedItems.map((item) => ({
       price_data: {
-        currency: 'usd',
+        currency: stripeCurrency,
         product_data: {
           name: item.title,
           metadata: { productId: item._id }
@@ -163,7 +164,7 @@ router.post('/:id/stripe-session', verifyToken, async (req, res) => {
 
     const lineItems = order.items.map((item) => ({
       price_data: {
-        currency: 'usd',
+        currency: stripeCurrency,
         product_data: {
           name: item.title,
           metadata: { productId: item.productId }
