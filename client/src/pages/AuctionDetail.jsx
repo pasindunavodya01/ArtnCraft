@@ -118,20 +118,20 @@ export default function AuctionDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center py-20 text-slate-100">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-800 border-t-red-600" />
-        <p className="mt-4 text-slate-400 text-sm">Loading masterpiece arena...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-20 text-gray-900">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-red-600" />
+        <p className="mt-4 text-gray-600 text-sm">Loading masterpiece arena...</p>
       </div>
     );
   }
 
   if (error || !auction || !auction.productId) {
     return (
-      <div className="min-h-screen bg-slate-950 py-16 px-4 text-center text-slate-100 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-gray-50 py-16 px-4 text-center text-gray-900 flex flex-col items-center justify-center">
         <AlertCircle size={48} className="text-red-500 mb-4" />
         <h2 className="text-xl font-bold">Arena Unavailable</h2>
-        <p className="text-slate-400 mt-2 max-w-sm">{error || 'This auction is not available or has been deleted.'}</p>
-        <Link to="/auctions" className="mt-6 inline-flex items-center gap-1 bg-red-600 px-6 py-2.5 rounded-xl font-bold text-white hover:bg-red-700">
+        <p className="text-gray-500 mt-2 max-w-sm">{error || 'This auction is not available or has been deleted.'}</p>
+        <Link to="/auctions" className="mt-6 inline-flex items-center gap-1 bg-red-600 px-6 py-2.5 rounded-xl font-bold text-white hover:bg-red-700 transition">
           <ArrowLeft size={16} /> Return to Arenas
         </Link>
       </div>
@@ -168,36 +168,35 @@ export default function AuctionDetail() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-gray-50 text-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         
         {/* Navigation Breadcrumb */}
-        <Link to="/auctions" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white transition mb-6">
+        <Link to="/auctions" className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 transition mb-6">
           <ArrowLeft size={14} /> Back to Auction Arena
         </Link>
 
         {/* Celebration Winner Banner */}
         {userIsWinner && (
-          <div className="relative overflow-hidden rounded-3xl border border-emerald-500 bg-gradient-to-r from-emerald-950 to-slate-950 p-6 sm:p-8 shadow-2xl mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
+          <div className="relative overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-white p-6 sm:p-8 shadow-sm mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-800">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-200">
                 <Trophy size={24} className="animate-bounce" />
               </div>
               <div>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 mb-1">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 px-2 py-0.5 rounded bg-emerald-100 border border-emerald-200 mb-1">
                   Congratulations!
                 </span>
-                <h2 className="text-xl sm:text-2xl font-black text-white">YOU WON THIS ARTWORK!</h2>
-                <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                  Your winning bid of <strong className="text-emerald-400 font-bold">Rs. {formatPrice(auction.highestBid)}</strong> was selected. Please complete your payment to finalize shipment.
+                <h2 className="text-xl sm:text-2xl font-black text-gray-900">YOU WON THIS ARTWORK!</h2>
+                <p className="text-xs sm:text-sm text-gray-700 mt-1">
+                  Your winning bid of <strong className="text-emerald-700 font-bold">Rs. {formatPrice(auction.highestBid)}</strong> was selected. Please complete your payment to finalize shipment.
                 </p>
               </div>
             </div>
             {auction.orderId && (
               <Link
                 to={`/pay-order/${auction.orderId}`}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-400 active:scale-95 shadow-md shadow-emerald-950/20 text-sm whitespace-nowrap self-start sm:self-center"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white transition hover:bg-emerald-700 active:scale-95 shadow-sm text-sm whitespace-nowrap self-start sm:self-center"
               >
                 <Sparkles size={16} /> Complete Payment Now
               </Link>
@@ -210,17 +209,19 @@ export default function AuctionDetail() {
           
           {/* LEFT: Image Gallery & Product Metadata */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl relative">
-              <img
-                src={product.images?.[activeImage] || 'https://via.placeholder.com/800x600'}
-                alt={product.title}
-                className="w-full h-auto max-h-[500px] object-contain mx-auto"
-              />
+            <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 shadow-sm relative">
+              <div className="overflow-hidden rounded-2xl bg-gray-100">
+                <img
+                  src={product.images?.[activeImage] || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNDUlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkFydG5DcmFmdDwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPk5vIEFydHdvcmsgSW1hZ2U8L3RleHQ+PC9zdmc+'}
+                  alt={product.title}
+                  className="w-full h-auto max-h-[500px] object-contain mx-auto"
+                />
+              </div>
               
               {/* Status Badge */}
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-8 right-8">
                 {isLive && (
-                  <span className="flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-md px-2.5 py-1 shadow-md shadow-red-950/40">
+                  <span className="flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-md px-2.5 py-1 shadow-md shadow-red-600/10">
                     <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" /> Live Arena
                   </span>
                 )}
@@ -230,7 +231,7 @@ export default function AuctionDetail() {
                   </span>
                 )}
                 {isEnded && (
-                  <span className="bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-bold uppercase tracking-wider rounded-md px-2.5 py-1">
+                  <span className="bg-gray-800 text-gray-100 border border-gray-700 text-[10px] font-bold uppercase tracking-wider rounded-md px-2.5 py-1">
                     Ended
                   </span>
                 )}
@@ -244,8 +245,8 @@ export default function AuctionDetail() {
                   <button
                     key={index}
                     onClick={() => setActiveImage(index)}
-                    className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-slate-900 ${
-                      activeImage === index ? 'border-red-600' : 'border-slate-800 hover:border-slate-700'
+                    className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-gray-50 ${
+                      activeImage === index ? 'border-red-600' : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <img src={img} alt="" className="h-full w-full object-cover" />
@@ -255,41 +256,41 @@ export default function AuctionDetail() {
             )}
 
             {/* Detailed Description */}
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 sm:p-8 backdrop-blur shadow-xl">
-              <span className="text-xs font-semibold text-red-500 uppercase tracking-wider">
+            <section className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm">
+              <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">
                 {product.category || 'General'}
               </span>
-              <h1 className="text-3xl font-extrabold text-white mt-1">{product.title}</h1>
-              <p className="text-slate-400 text-xs mt-1">Created & Owned by {product.sellerEmail}</p>
+              <h1 className="text-3xl font-extrabold text-gray-900 mt-1">{product.title}</h1>
+              <p className="text-gray-500 text-xs mt-1">Created & Owned by {product.sellerEmail}</p>
 
-              <hr className="border-slate-800 my-5" />
+              <hr className="border-gray-100 my-5" />
 
-              <h3 className="text-sm font-bold text-slate-300">Artwork details & description</h3>
-              <p className="text-slate-300 text-sm mt-2 leading-relaxed whitespace-pre-line">
+              <h3 className="text-sm font-bold text-gray-900">Artwork details & description</h3>
+              <p className="text-gray-700 text-sm mt-2 leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
 
               {/* Specific specifications */}
               {(product.style || product.medium || product.tags?.length > 0) && (
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-slate-800/80 pt-6">
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-gray-100 pt-6">
                   {product.style && (
                     <div>
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Style</p>
-                      <p className="text-xs text-slate-300 mt-0.5">{product.style}</p>
+                      <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Style</p>
+                      <p className="text-xs text-gray-800 mt-0.5">{product.style}</p>
                     </div>
                   )}
                   {product.medium && (
                     <div>
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Medium</p>
-                      <p className="text-xs text-slate-300 mt-0.5">{product.medium}</p>
+                      <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Medium</p>
+                      <p className="text-xs text-gray-800 mt-0.5">{product.medium}</p>
                     </div>
                   )}
                   {product.tags?.length > 0 && (
                     <div className="col-span-2 sm:col-span-1">
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Tags</p>
+                      <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Tags</p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {product.tags.map((t, idx) => (
-                          <span key={idx} className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]">
+                          <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] font-medium border border-gray-200">
                             #{t}
                           </span>
                         ))}
@@ -305,32 +306,32 @@ export default function AuctionDetail() {
           <div className="lg:col-span-5 space-y-6">
             
             {/* Countdown & Bidding Controls */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl relative overflow-hidden">
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-red-600/5 via-transparent to-transparent pointer-events-none" />
 
               {/* Countdown Ticker */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
                   <Clock size={14} className={isLive ? 'text-red-500 animate-spin' : ''} /> Time Status
                 </span>
                 <span className={`text-sm font-bold ${
-                  isEnded ? 'text-slate-400' : isUpcoming ? 'text-amber-400' : 'text-red-400'
+                  isEnded ? 'text-gray-500' : isUpcoming ? 'text-amber-600' : 'text-red-600'
                 }`}>
                   {timeLeft}
                 </span>
               </div>
 
               {/* Bidding Summary parameters */}
-              <div className="grid grid-cols-2 gap-4 rounded-xl bg-slate-950 p-4 border border-slate-800/80 mb-5">
+              <div className="grid grid-cols-2 gap-4 rounded-xl bg-gray-50 p-4 border border-gray-100 mb-5">
                 <div>
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Starting Bid</p>
-                  <p className="text-lg font-bold text-slate-200">Rs. {formatPrice(auction.startingBid)}</p>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Starting Bid</p>
+                  <p className="text-lg font-bold text-gray-800">Rs. {formatPrice(auction.startingBid)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
                     {isEnded ? 'Winning Bid' : 'Current Highest Bid'}
                   </p>
-                  <p className="text-xl font-black text-red-500">
+                  <p className="text-xl font-black text-red-600">
                     Rs. {formatPrice(auction.highestBid > 0 ? auction.highestBid : auction.startingBid)}
                   </p>
                 </div>
@@ -338,7 +339,7 @@ export default function AuctionDetail() {
 
               {/* Context Feedback Cards */}
               {userIsSeller && (
-                <div className="rounded-xl bg-blue-950/20 border border-blue-900/40 p-4 mb-5 flex gap-2.5 text-xs text-blue-400">
+                <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 mb-5 flex gap-2.5 text-xs text-blue-700">
                   <ShieldAlert size={18} className="shrink-0" />
                   <div>
                     <span className="font-bold">You own this artwork.</span> Sellers are not permitted to bid on their own listings to protect auction transparency.
@@ -347,7 +348,7 @@ export default function AuctionDetail() {
               )}
 
               {userIsHighestBidder && isLive && (
-                <div className="rounded-xl bg-emerald-950/20 border border-emerald-900/40 p-4 mb-5 flex gap-2.5 text-xs text-emerald-400">
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 mb-5 flex gap-2.5 text-xs text-emerald-700">
                   <Sparkles size={18} className="shrink-0" />
                   <div>
                     <span className="font-bold">You are the highest bidder!</span> You currently hold the leading bid. Keep an eye on it in case someone tries to outbid you!
@@ -359,11 +360,11 @@ export default function AuctionDetail() {
               {isLive && !userIsSeller && (
                 <form onSubmit={handleBidSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
                       Place your bid (Minimum: Rs. {formatPrice(minRequiredBid)})
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-3 text-sm font-bold text-slate-400">Rs.</span>
+                      <span className="absolute left-4 top-3 text-sm font-bold text-gray-400">Rs.</span>
                       <input
                         type="number"
                         placeholder={minRequiredBid.toFixed(2)}
@@ -371,21 +372,21 @@ export default function AuctionDetail() {
                         step="0.01"
                         value={bidAmount}
                         onChange={(e) => setBidAmount(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-11 pr-4 py-3 text-sm text-white focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition font-mono font-bold"
+                        className="w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 py-3 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition font-mono font-bold"
                         required
                       />
                     </div>
                   </div>
 
                   {bidError && (
-                    <div className="rounded-lg bg-red-950/40 border border-red-900/40 p-3 text-xs text-red-400 flex items-center gap-1.5">
+                    <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 flex items-center gap-1.5">
                       <AlertCircle size={14} />
                       {bidError}
                     </div>
                   )}
 
                   {bidSuccess && (
-                    <div className="rounded-lg bg-emerald-950/40 border border-emerald-900/40 p-3 text-xs text-emerald-400 flex items-center gap-1.5">
+                    <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-700 flex items-center gap-1.5">
                       <Sparkles size={14} />
                       {bidSuccess}
                     </div>
@@ -394,7 +395,7 @@ export default function AuctionDetail() {
                   <button
                     type="submit"
                     disabled={placingBid}
-                    className="w-full rounded-xl bg-red-600 hover:bg-red-700 py-3 font-bold text-white transition active:scale-98 disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-red-950/30 text-sm"
+                    className="w-full rounded-xl bg-red-600 hover:bg-red-700 py-3 font-bold text-white transition active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2 text-sm shadow-sm"
                   >
                     <Gavel size={18} />
                     {placingBid ? 'Submitting Bid...' : 'Place Bid'}
@@ -406,7 +407,7 @@ export default function AuctionDetail() {
               {!user && isLive && (
                 <Link
                   to="/login"
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 py-3 font-bold text-white transition text-sm shadow-lg shadow-red-950/20"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 py-3 font-bold text-white transition text-sm shadow-sm"
                 >
                   <Gavel size={18} /> Login to Place Bid
                 </Link>
@@ -414,10 +415,10 @@ export default function AuctionDetail() {
 
               {/* Upcoming Details */}
               {isUpcoming && (
-                <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-center py-6">
-                  <Calendar className="mx-auto text-slate-500 mb-2" size={32} />
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Auction Upcoming</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-[250px] mx-auto">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center py-6">
+                  <Calendar className="mx-auto text-gray-400 mb-2" size={32} />
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Auction Upcoming</p>
+                  <p className="text-xs text-gray-500 mt-1 max-w-[250px] mx-auto">
                     This artwork's bidding arena starts at: {formatDate(auction.startTime)}
                   </p>
                 </div>
@@ -425,10 +426,10 @@ export default function AuctionDetail() {
 
               {/* Ended Details */}
               {isEnded && !userIsWinner && (
-                <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-center py-6">
-                  <Trophy className="mx-auto text-slate-600 mb-2" size={32} />
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Auction Completed</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-[250px] mx-auto">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center py-6">
+                  <Trophy className="mx-auto text-gray-400 mb-2" size={32} />
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Auction Completed</p>
+                  <p className="text-xs text-gray-500 mt-1 max-w-[250px] mx-auto">
                     This bidding arena has ended. {auction.winnerEmail ? 'A winner has been declared!' : 'Ended without bids.'}
                   </p>
                 </div>
@@ -436,14 +437,14 @@ export default function AuctionDetail() {
             </div>
 
             {/* Bid History list */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur shadow-xl">
-              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-800 pb-3 mb-4">
-                <History size={16} className="text-slate-400" />
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-gray-100 pb-3 mb-4">
+                <History size={16} className="text-gray-500" />
                 Bidding History ({auction.bids?.length || 0})
               </h3>
 
               {auction.bids?.length === 0 ? (
-                <div className="text-center py-8 text-slate-500 text-xs">
+                <div className="text-center py-8 text-gray-500 text-xs">
                   No bids have been placed yet. Be the first to place a bid!
                 </div>
               ) : (
@@ -453,22 +454,22 @@ export default function AuctionDetail() {
                     return (
                       <div
                         key={idx}
-                        className={`flex items-center justify-between rounded-xl px-4 py-3 text-xs ${
+                        className={`flex items-center justify-between rounded-xl px-4 py-3 text-xs border ${
                           idx === 0
-                            ? 'bg-red-950/20 border border-red-900/40 text-red-200 font-bold'
-                            : 'bg-slate-950/60 text-slate-300'
+                            ? 'bg-red-50 border-red-200 text-red-900 font-bold'
+                            : 'bg-gray-50 border-gray-100 text-gray-800'
                         }`}
                       >
                         <div>
                           <p className="flex items-center gap-1">
                             {bid.buyerName || bid.buyerEmail.split('@')[0]}
                             {isBidderEmailMe && (
-                              <span className="text-[9px] bg-red-950 text-red-400 border border-red-800 rounded px-1">
+                              <span className="text-[9px] bg-red-100 text-red-700 border border-red-200 rounded px-1 font-semibold">
                                 You
                               </span>
                             )}
                           </p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">
+                          <p className="text-[10px] text-gray-500 mt-0.5">
                             {formatDate(bid.timestamp)}
                           </p>
                         </div>

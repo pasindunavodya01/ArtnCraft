@@ -12,6 +12,10 @@ export default function SellerProducts() {
   const [error, setError] = useState('');
   const { addToCart } = useCart();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
   const sellerEmail = searchParams.get('email') || '';
 
   useEffect(() => {
@@ -36,6 +40,15 @@ export default function SellerProducts() {
   }, [sellerEmail]);
 
   const handleAdd = (product) => addToCart(product);
+
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProducts = products.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -71,10 +84,53 @@ export default function SellerProducts() {
             <p className="mt-3 text-gray-600">The seller may not have added any items yet.</p>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <ProductCard key={product._id} product={product} onAdd={handleAdd} />
-            ))}
+          <div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {paginatedProducts.map((product) => (
+                <ProductCard key={product._id} product={product} onAdd={handleAdd} />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-1.5 pb-8 border-t border-gray-255 pt-6">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition"
+                >
+                  Prev
+                </button>
+
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const pageNum = index + 1;
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
+                        currentPage === pageNum
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

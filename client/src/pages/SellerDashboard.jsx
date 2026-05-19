@@ -43,6 +43,31 @@ export default function SellerDashboard() {
   const [auctionSuccess, setAuctionSuccess] = useState('');
   const [submittingAuction, setSubmittingAuction] = useState(false);
 
+  // Pagination states
+  const [productsPage, setProductsPage] = useState(1);
+  const [auctionsPage, setAuctionsPage] = useState(1);
+  const itemsPerPage = 12;
+
+  // Products pagination helper calculations
+  const totalProductsPages = Math.ceil(products.length / itemsPerPage);
+  const productsStartIndex = (productsPage - 1) * itemsPerPage;
+  const paginatedProducts = products.slice(productsStartIndex, productsStartIndex + itemsPerPage);
+
+  const handleProductsPageChange = (pageNumber) => {
+    setProductsPage(pageNumber);
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
+
+  // Auctions pagination helper calculations
+  const totalAuctionsPages = Math.ceil(auctions.length / itemsPerPage);
+  const auctionsStartIndex = (auctionsPage - 1) * itemsPerPage;
+  const paginatedAuctions = auctions.slice(auctionsStartIndex, auctionsStartIndex + itemsPerPage);
+
+  const handleAuctionsPageChange = (pageNumber) => {
+    setAuctionsPage(pageNumber);
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     if (role === 'seller' && user?.email) {
       loadSellerProducts();
@@ -790,51 +815,94 @@ export default function SellerDashboard() {
                 <p className="text-gray-600">No products yet. Click "Add Product" to get started!</p>
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {products.map((product) => (
-                  <div key={product._id} className="rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition">
-                    <div className="relative h-40 overflow-hidden bg-gray-100">
-                      <img
-                        src={product.images?.[0] || product.imageUrl}
-                        alt={product.title}
-                        className="h-full w-full object-cover"
-                      />
-                      {product.images?.length > 1 && (
-                        <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
-                          {product.images.length} photos
+              <div>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {paginatedProducts.map((product) => (
+                    <div key={product._id} className="rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition">
+                      <div className="relative h-40 overflow-hidden bg-gray-100">
+                        <img
+                          src={product.images?.[0] || product.imageUrl}
+                          alt={product.title}
+                          className="h-full w-full object-cover"
+                        />
+                        {product.images?.length > 1 && (
+                          <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+                            {product.images.length} photos
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-gray-900 line-clamp-2">
+                          {product.title}
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-600">{product.category}</p>
+                        <p className="mt-2 text-lg font-bold text-red-600">
+                          Rs. {parseFloat(product.price).toFixed(2)}
+                        </p>
+                        <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                          {product.description}
+                        </p>
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() => handleEdit(product)}
+                            className="flex-1 rounded-lg border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-50 transition font-medium"
+                          >
+                            <Edit size={16} />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product._id)}
+                            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-50 py-2 text-red-600 hover:bg-red-100 transition font-medium"
+                          >
+                            <Trash2 size={16} />
+                            Delete
+                          </button>
                         </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 line-clamp-2">
-                        {product.title}
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-600">{product.category}</p>
-                      <p className="mt-2 text-lg font-bold text-red-600">
-                        Rs. {parseFloat(product.price).toFixed(2)}
-                      </p>
-                      <p className="mt-2 text-sm text-gray-600 line-clamp-2">
-                        {product.description}
-                      </p>
-                      <div className="mt-4 flex gap-2">
-                        <button
-                          onClick={() => handleEdit(product)}
-                          className="flex-1 rounded-lg border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-50 transition font-medium"
-                        >
-                          <Edit size={16} />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product._id)}
-                          className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-50 py-2 text-red-600 hover:bg-red-100 transition font-medium"
-                        >
-                          <Trash2 size={16} />
-                          Delete
-                        </button>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalProductsPages > 1 && (
+                  <div className="mt-12 flex items-center justify-center gap-1.5 pb-8 border-t border-gray-200 pt-6">
+                    <button
+                      type="button"
+                      onClick={() => handleProductsPageChange(Math.max(productsPage - 1, 1))}
+                      disabled={productsPage === 1}
+                      className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition"
+                    >
+                      Prev
+                    </button>
+
+                    {Array.from({ length: totalProductsPages }, (_, index) => {
+                      const pageNum = index + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => handleProductsPageChange(pageNum)}
+                          className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
+                            productsPage === pageNum
+                              ? 'bg-red-600 text-white shadow-sm'
+                              : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => handleProductsPageChange(Math.min(productsPage + 1, totalProductsPages))}
+                      disabled={productsPage === totalProductsPages}
+                      className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition"
+                    >
+                      Next
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
@@ -970,61 +1038,104 @@ export default function SellerDashboard() {
                 <p className="text-gray-600">No auctions created yet. Click "Create Auction" to start listing artworks for bidding!</p>
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {auctions.map((auction) => {
-                  const product = auction.productId;
-                  if (!product) return null;
+              <div>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {paginatedAuctions.map((auction) => {
+                    const product = auction.productId;
+                    if (!product) return null;
 
-                  return (
-                    <div key={auction._id} className="rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition flex flex-col justify-between">
-                      <div>
-                        <div className="relative h-40 overflow-hidden bg-gray-100 border-b border-gray-200">
-                          <img
-                            src={product.images?.[0] || 'https://via.placeholder.com/400x300'}
-                            alt={product.title}
-                            className="h-full w-full object-cover"
-                          />
-                          <div className="absolute top-2 right-2">
-                            <span className={`inline-block px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider text-white shadow-md ${
-                              auction.status === 'active' ? 'bg-green-600' : auction.status === 'pending' ? 'bg-blue-600' : 'bg-slate-700'
-                            }`}>
-                              {auction.status}
-                            </span>
+                    return (
+                      <div key={auction._id} className="rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition flex flex-col justify-between">
+                        <div>
+                          <div className="relative h-40 overflow-hidden bg-gray-100 border-b border-gray-200">
+                            <img
+                              src={product.images?.[0] || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNDUlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkFydG5DcmFmdDwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjU1JSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPk5vIEFydHdvcmsgSW1hZ2U8L3RleHQ+PC9zdmc+'}
+                              alt={product.title}
+                              className="h-full w-full object-cover"
+                            />
+                            <div className="absolute top-2 right-2">
+                              <span className={`inline-block px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider text-white shadow-md ${
+                                auction.status === 'active' ? 'bg-green-600' : auction.status === 'pending' ? 'bg-blue-600' : 'bg-slate-700'
+                              }`}>
+                                {auction.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-4">
+                            <h3 className="font-semibold text-gray-900 truncate">{product.title}</h3>
+                            
+                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs border border-gray-100 rounded-lg p-2.5 bg-gray-50">
+                              <div>
+                                <p className="text-gray-400 uppercase font-bold text-[9px] tracking-wide">Starting Bid</p>
+                                <p className="font-semibold text-gray-700 mt-0.5">Rs. {auction.startingBid.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-400 uppercase font-bold text-[9px] tracking-wide">Highest Bid</p>
+                                <p className="font-bold text-red-600 mt-0.5">Rs. {auction.highestBid.toFixed(2)}</p>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 space-y-1 text-xs text-gray-600">
+                              <p className="flex items-center gap-1.5"><Clock size={13} className="text-gray-400" /> Start: {new Date(auction.startTime).toLocaleString()}</p>
+                              <p className="flex items-center gap-1.5"><Clock size={13} className="text-gray-400" /> End: {new Date(auction.endTime).toLocaleString()}</p>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="p-4">
-                          <h3 className="font-semibold text-gray-900 truncate">{product.title}</h3>
-                          
-                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs border border-gray-100 rounded-lg p-2.5 bg-gray-50">
-                            <div>
-                              <p className="text-gray-400 uppercase font-bold text-[9px] tracking-wide">Starting Bid</p>
-                              <p className="font-semibold text-gray-700 mt-0.5">Rs. {auction.startingBid.toFixed(2)}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-400 uppercase font-bold text-[9px] tracking-wide">Highest Bid</p>
-                              <p className="font-bold text-red-600 mt-0.5">Rs. {auction.highestBid.toFixed(2)}</p>
-                            </div>
-                          </div>
-
-                          <div className="mt-3 space-y-1 text-xs text-gray-600">
-                            <p className="flex items-center gap-1.5"><Clock size={13} className="text-gray-400" /> Start: {new Date(auction.startTime).toLocaleString()}</p>
-                            <p className="flex items-center gap-1.5"><Clock size={13} className="text-gray-400" /> End: {new Date(auction.endTime).toLocaleString()}</p>
-                          </div>
+                        <div className="p-4 pt-0">
+                          <Link
+                            to={`/auctions/${auction._id}`}
+                            className="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 py-2.5 text-xs font-bold text-gray-800 transition"
+                          >
+                            <Gavel size={14} /> View Arena & Bids ({auction.bids?.length || 0})
+                          </Link>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
 
-                      <div className="p-4 pt-0">
-                        <Link
-                          to={`/auctions/${auction._id}`}
-                          className="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 py-2.5 text-xs font-bold text-gray-800 transition"
+                {/* Pagination Controls */}
+                {totalAuctionsPages > 1 && (
+                  <div className="mt-12 flex items-center justify-center gap-1.5 pb-8 border-t border-gray-200 pt-6">
+                    <button
+                      type="button"
+                      onClick={() => handleAuctionsPageChange(Math.max(auctionsPage - 1, 1))}
+                      disabled={auctionsPage === 1}
+                      className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition"
+                    >
+                      Prev
+                    </button>
+
+                    {Array.from({ length: totalAuctionsPages }, (_, index) => {
+                      const pageNum = index + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => handleAuctionsPageChange(pageNum)}
+                          className={`h-10 w-10 inline-flex items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 ${
+                            auctionsPage === pageNum
+                              ? 'bg-red-600 text-white shadow-sm'
+                              : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
                         >
-                          <Gavel size={14} /> View Arena & Bids ({auction.bids?.length || 0})
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => handleAuctionsPageChange(Math.min(auctionsPage + 1, totalAuctionsPages))}
+                      disabled={auctionsPage === totalAuctionsPages}
+                      className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
