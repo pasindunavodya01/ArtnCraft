@@ -15,6 +15,7 @@ import reportRoutes from './routes/reports.js';
 import auctionRoutes from './routes/auctions.js';
 import { startAuctionScheduler } from './services/auctionScheduler.js';
 import { isFirebaseAdminAvailable } from './utils/firebaseAdmin.js';
+import Product from './models/Product.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,7 +42,30 @@ app.get('/api/health', (req, res) => {
 });
 
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
+  .then(async () => {
+    console.log('MongoDB connected');
+    try {
+      const count = await Product.countDocuments({ $or: [{ priceNumber: { $exists: false } }, { priceNumber: null }] });
+      if (count > 0) {
+        console.log(`Found ${count} products missing 'priceNumber'. Performing self-healing migration...`);
+        const products = await Product.find({ $or: [{ priceNumber: { $exists: false } }, { priceNumber: null }] });
+        let migratedCount = 0;
+        for (const product of products) {
+          if (product.price) {
+            const parsed = parseFloat(String(product.price).replace(/,/g, '.'));
+            if (!isNaN(parsed)) {
+              product.priceNumber = parsed;
+              await product.save();
+              migratedCount++;
+            }
+          }
+        }
+        console.log(`Self-healing migration completed successfully. Migrated ${migratedCount} products.`);
+      }
+    } catch (migrationErr) {
+      console.error('Self-healing migration failed:', migrationErr);
+    }
+  })
   .catch((error) => console.error('MongoDB connection error:', error));
 
 app.use((err, req, res, next) => {

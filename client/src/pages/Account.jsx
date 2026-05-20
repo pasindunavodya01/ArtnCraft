@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Heart,
   Package,
@@ -95,8 +95,10 @@ export default function Account() {
     loadWishlist();
   }, [user]);
 
+  const location = useLocation();
+
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const handleSave = async (event) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { Mail, Lock } from 'lucide-react';
 
@@ -10,6 +10,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login, resetPassword } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/';
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -29,7 +31,7 @@ export default function Login() {
       } else if (userRole === 'seller') {
         navigate('/seller');
       } else {
-        navigate('/');
+        navigate(from, { replace: true });
       }
     } catch (err) {
       setError('Login failed. Please check your credentials.');
@@ -126,7 +128,7 @@ export default function Login() {
 
           <p className="mt-6 text-center text-sm text-gray-600">
             Don't have an account?{' '}
-            <Link to="/register" className="font-semibold text-red-600 hover:text-red-700">
+            <Link to="/register" state={{ from }} className="font-semibold text-red-600 hover:text-red-700">
               Create one here
             </Link>
           </p>

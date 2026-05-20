@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { User, Mail, Lock, UserCheck } from 'lucide-react';
 
@@ -9,6 +9,8 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/';
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -33,7 +35,7 @@ export default function Register() {
       } else if (form.role === 'seller') {
         navigate('/seller');
       } else {
-        navigate('/');
+        navigate(from, { replace: true });
       }
     } catch (err) {
       setError('Registration failed. Try another email address.');
@@ -145,7 +147,7 @@ export default function Register() {
 
           <p className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-red-600 hover:text-red-700">
+            <Link to="/login" state={{ from }} className="font-semibold text-red-600 hover:text-red-700">
               Sign in here
             </Link>
           </p>

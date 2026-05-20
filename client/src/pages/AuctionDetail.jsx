@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Gavel, Clock, History, AlertCircle, Sparkles, Trophy, ShieldAlert, ArrowLeft, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import api from '../services/api.js';
@@ -8,6 +8,7 @@ export default function AuctionDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [auction, setAuction] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ export default function AuctionDetail() {
     setBidSuccess('');
 
     if (!user) {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
       return;
     }
 
@@ -357,7 +358,7 @@ export default function AuctionDetail() {
               )}
 
               {/* Place Bid Interactive Form */}
-              {isLive && !userIsSeller && (
+              {isLive && user && !userIsSeller && (
                 <form onSubmit={handleBidSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
@@ -405,12 +406,30 @@ export default function AuctionDetail() {
 
               {/* Login CTA if unauthenticated */}
               {!user && isLive && (
-                <Link
-                  to="/login"
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 py-3 font-bold text-white transition text-sm shadow-sm"
-                >
-                  <Gavel size={18} /> Login to Place Bid
-                </Link>
+                <div className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 p-6 text-center shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-amber-500" />
+                  <Gavel className="mx-auto text-red-600 mb-3 animate-pulse" size={32} />
+                  <h4 className="text-sm font-bold text-gray-900">Bidding Arena Locked</h4>
+                  <p className="text-xs text-gray-500 mt-1.5 max-w-[280px] mx-auto leading-relaxed">
+                    You must be signed in to your ArtnCraft account to participate and place live bids on this artwork.
+                  </p>
+                  <div className="mt-5 flex flex-col gap-2">
+                    <Link
+                      to="/login"
+                      state={{ from: location }}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-755 py-3 font-bold text-white transition active:scale-[0.98] text-sm shadow-sm font-sans"
+                    >
+                      Sign In to Place Bid
+                    </Link>
+                    <Link
+                      to="/register"
+                      state={{ from: location }}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 py-3 font-semibold text-gray-700 transition active:scale-[0.98] text-sm shadow-sm"
+                    >
+                      Create Free Account
+                    </Link>
+                  </div>
+                </div>
               )}
 
               {/* Upcoming Details */}

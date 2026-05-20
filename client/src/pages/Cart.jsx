@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext.jsx';
 import { formatPrice, getItemImage, getItemUnitPrice } from '../utils/cart.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -9,6 +9,7 @@ export default function Cart() {
   const { cart, removeFromCart, updateQuantity, refreshCart, total } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (user?.email) refreshCart();
@@ -32,7 +33,7 @@ export default function Cart() {
 
   const handleCheckout = () => {
     if (!user) {
-      navigate('/login');
+      navigate('/login', { state: { from: { pathname: '/checkout' } } });
       return;
     }
     navigate('/checkout');

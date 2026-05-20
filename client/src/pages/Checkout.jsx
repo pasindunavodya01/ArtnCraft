@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext.jsx';
 import { formatPrice, getItemImage, getItemUnitPrice } from '../utils/cart.js';
 import api, { setAuthToken } from '../services/api.js';
@@ -18,8 +18,10 @@ export default function Checkout() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const location = useLocation();
+
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const handleSubmit = async (event) => {

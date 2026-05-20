@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { MapPin, Package, CreditCard, FileImage, AlertCircle, Sparkles, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import api from '../services/api.js';
@@ -8,6 +8,7 @@ export default function PayExistingOrder() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,7 +21,7 @@ export default function PayExistingOrder() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
       return;
     }
 
