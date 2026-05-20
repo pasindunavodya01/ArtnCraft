@@ -491,24 +491,24 @@ export default function SellerDashboard() {
             </div>
 
             <div className="mt-6 overflow-x-auto">
-              <div className="flex h-52 items-end gap-3 pb-4">
+              <div className="flex h-48 items-end gap-3 pb-2">
                 {dailyRevenueData.map((day) => (
-                  <div key={day.label} className="flex-1 text-center">
-                    <div
-                      className="mx-auto flex h-full items-end justify-center"
-                      style={{ minHeight: '1rem' }}
-                    >
+                  <div key={day.label} className="flex-1 text-center flex flex-col justify-end h-full min-w-[42px]">
+                    <div className="flex-1 flex items-end justify-center relative group">
                       <div
-                        className="w-full rounded-t-2xl bg-red-600 transition-all"
+                        className="w-full rounded-t-lg bg-red-600 hover:bg-red-700 transition-all duration-300 shadow-sm"
                         style={{
                           height: `${(day.revenue / maxDailyRevenue) * 100}%`,
-                          minHeight: day.revenue > 0 ? '1rem' : '0.5rem',
+                          minHeight: day.revenue > 0 ? '6px' : '3px',
                         }}
                       />
+                      <div className="absolute bottom-full mb-1.5 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[10px] font-bold py-1 px-2.5 rounded-lg transition duration-200 pointer-events-none whitespace-nowrap shadow-md z-10">
+                        Rs. {day.revenue.toFixed(0)}
+                      </div>
                     </div>
-                    <div className="mt-3 text-xs text-gray-600">
-                      <p className="font-semibold text-gray-900">Rs. {day.revenue.toFixed(0)}</p>
-                      <p>{day.label}</p>
+                    <div className="mt-3 text-[10px] text-gray-500">
+                      <p className="font-bold text-gray-900">Rs. {day.revenue.toFixed(0)}</p>
+                      <p className="font-semibold text-gray-400 uppercase tracking-widest text-[8px] mt-0.5">{day.label}</p>
                     </div>
                   </div>
                 ))}
