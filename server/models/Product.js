@@ -19,7 +19,9 @@ const productSchema = new mongoose.Schema({
       message: 'Please provide at least one image URL',
     },
   },
-  sellerEmail: { type: String, trim: true, default: 'unknown' }
+  sellerEmail: { type: String, trim: true, default: 'unknown' },
+  quantity: { type: Number, required: true, default: 1, min: 0 },
+  isAuctionProduct: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const Product = mongoose.models.Product || mongoose.model('Product', productSchema);

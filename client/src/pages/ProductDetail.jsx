@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, ShoppingCart, Star, Flag } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Star, Flag, Gavel } from 'lucide-react';
 import api from '../services/api.js';
 import ProductCard from '../components/ProductCard.jsx';
 import { useCart } from '../contexts/CartContext.jsx';
@@ -464,32 +464,70 @@ export default function ProductDetail() {
                 </div>
               </div>
 
+              {!product.isAuctionProduct && (
+                <div className="mt-4">
+                  {product.quantity > 0 ? (
+                    product.quantity <= 3 ? (
+                      <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800 animate-pulse">
+                        ⚠️ Only {product.quantity} left - Order soon!
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+                        ✓ In Stock ({product.quantity} available)
+                      </span>
+                    )
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">
+                      ✗ Out of Stock
+                    </span>
+                  )}
+                </div>
+              )}
+
               <p className="mt-5 text-sm sm:text-base leading-relaxed text-gray-700">{product.description}</p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <button
-                  onClick={() => addToCart(product)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-                >
-                  <ShoppingCart size={18} />
-                  <span>Add to Cart</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={toggleWishlist}
-                  disabled={!user || wishlistLoading}
-                  className={`flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition ${
-                    inWishlist
-                      ? 'border-red-600 bg-red-50 text-red-700'
-                      : 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
-                  } disabled:opacity-60`}
-                >
-                  <Heart size={18} className={inWishlist ? 'fill-red-600 text-red-600' : ''} />
-                  <span>{inWishlist ? 'In Wishlist' : 'Add to Wishlist'}</span>
-                </button>
-              </div>
+              {product.isAuctionProduct ? (
+                <div className="rounded-2xl bg-purple-50 border border-purple-200 p-5 mt-6 text-center">
+                  <p className="text-sm font-semibold text-purple-800 flex items-center justify-center gap-1.5">
+                    <Gavel size={16} /> Auction Exclusive Artwork
+                  </p>
+                  <p className="mt-2 text-xs text-purple-600 leading-relaxed">
+                    This masterpiece is designated for live bidding only and cannot be purchased directly through the standard cart.
+                  </p>
+                  <Link
+                    to="/auctions"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-700 shadow-sm"
+                  >
+                    Go to Auction Arena
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  <button
+                    onClick={() => addToCart(product)}
+                    disabled={product.quantity <= 0}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ShoppingCart size={18} />
+                    <span>{product.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={toggleWishlist}
+                    disabled={!user || wishlistLoading}
+                    className={`flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition ${
+                      inWishlist
+                        ? 'border-red-600 bg-red-50 text-red-700'
+                        : 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
+                    } disabled:opacity-60`}
+                  >
+                    <Heart size={18} className={inWishlist ? 'fill-red-600 text-red-600' : ''} />
+                    <span>{inWishlist ? 'In Wishlist' : 'Add to Wishlist'}</span>
+                  </button>
+                </div>
+              )}
 
-              {!user && (
+              {!user && !product.isAuctionProduct && (
                 <p className="mt-4 text-sm text-gray-600">Log in to save items to your wishlist and get personalized recommendations.</p>
               )}
             </div>

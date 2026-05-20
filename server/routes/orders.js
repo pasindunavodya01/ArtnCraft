@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import Stripe from 'stripe';
 import Order from '../models/Order.js';
+import Product from '../models/Product.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 import cloudinary from '../utils/cloudinary.js';
 
@@ -47,6 +48,23 @@ const parseOrderItems = (items) => {
     }
   }
   return items;
+};
+
+const decreaseProductStock = async (order) => {
+  if (order.inventoryUpdated) return;
+  try {
+    for (const item of order.items) {
+      if (item.productId) {
+        await Product.findByIdAndUpdate(item.productId, {
+          $inc: { quantity: -item.quantity }
+        });
+      }
+    }
+    order.inventoryUpdated = true;
+    await order.save();
+  } catch (error) {
+    console.error('[decreaseProductStock] Error updating inventory:', error);
+  }
 };
 
 router.post('/checkout', verifyToken, upload.array('receipts', 5), async (req, res) => {
@@ -271,6 +289,7 @@ router.post('/stripe-confirm', verifyToken, async (req, res) => {
       }));
 
       await order.save();
+      await decreaseProductStock(order);
       return res.json(order);
     }
 
@@ -291,6 +310,7 @@ router.post('/stripe-confirm', verifyToken, async (req, res) => {
       sellerApprovals
     });
 
+    await decreaseProductStock(order);
     res.status(201).json(order);
   } catch (error) {
     console.error(error);
@@ -368,6 +388,7 @@ router.post('/:id/seller-approve', verifyToken, async (req, res) => {
       order.paymentStatus = 'rejected';
     } else if (allApproved) {
       order.paymentStatus = 'paid';
+      await decreaseProductStock(order);
     } else {
       order.paymentStatus = 'awaiting_approval';
     }

@@ -23,7 +23,8 @@ const orderSchema = new mongoose.Schema({
   paymentStatus: { type: String, enum: ['pending', 'awaiting_approval', 'paid', 'rejected'], default: 'pending' },
   receiptUrls: [{ type: String }],
   stripeSessionId: { type: String, trim: true },
-  sellerApprovals: [approvalSchema]
+  sellerApprovals: [approvalSchema],
+  inventoryUpdated: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const Order = mongoose.model('Order', orderSchema);

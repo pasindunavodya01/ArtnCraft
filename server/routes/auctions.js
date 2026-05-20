@@ -28,6 +28,10 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized: You do not own this artwork' });
     }
 
+    if (!product.isAuctionProduct) {
+      return res.status(400).json({ message: 'This artwork is not designated for auction listings. Please create it as an auction product first.' });
+    }
+
     // Verify no active or pending auction exists for this product
     const existingAuction = await Auction.findOne({
       productId,

@@ -18,6 +18,8 @@ export default function SellerDashboard() {
     images: [],
     existingImages: [],
     removedImages: [],
+    quantity: '1',
+    isAuctionProduct: 'false',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -91,7 +93,7 @@ export default function SellerDashboard() {
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
       }
 
-      const response = await api.get(`/products?sellerEmail=${encodeURIComponent(user.email)}`);
+      const response = await api.get(`/products?sellerEmail=${encodeURIComponent(user.email)}&all=true`);
       setProducts(response.data);
     } catch (err) {
       setError('Failed to load your products');
@@ -120,6 +122,8 @@ export default function SellerDashboard() {
       images: [],
       existingImages: product.images || [],
       removedImages: [],
+      quantity: product.quantity !== undefined ? String(product.quantity) : '1',
+      isAuctionProduct: product.isAuctionProduct ? 'true' : 'false',
     });
     setError('');
     setSuccess('');
@@ -136,7 +140,17 @@ export default function SellerDashboard() {
   const resetForm = () => {
     setEdit(null);
     setShowForm(false);
-    setForm({ title: '', description: '', category: '', price: '', images: [], existingImages: [], removedImages: [] });
+    setForm({
+      title: '',
+      description: '',
+      category: '',
+      price: '',
+      images: [],
+      existingImages: [],
+      removedImages: [],
+      quantity: '1',
+      isAuctionProduct: 'false',
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -166,6 +180,8 @@ export default function SellerDashboard() {
       formData.append('description', form.description);
       formData.append('category', form.category);
       formData.append('price', form.price);
+      formData.append('quantity', form.quantity || '1');
+      formData.append('isAuctionProduct', form.isAuctionProduct || 'false');
       form.images.forEach((image) => formData.append('images', image));
       if (form.removedImages.length) {
         formData.append('removeImages', JSON.stringify(form.removedImages));
@@ -557,12 +573,17 @@ export default function SellerDashboard() {
                   required
                 >
                   <option value="">-- Choose one of your artworks --</option>
-                  {products.map((p) => (
+                  {products.filter((p) => p.isAuctionProduct === true).map((p) => (
                     <option key={p._id} value={p._id}>
                       {p.title} (Rs. {parseFloat(p.price).toFixed(2)})
                     </option>
                   ))}
                 </select>
+                {products.filter((p) => p.isAuctionProduct === true).length === 0 && (
+                  <p className="mt-1.5 text-xs text-red-600 font-semibold flex items-center gap-1">
+                    ⚠️ You do not have any artworks designated for auctions. Add or edit an artwork, selecting "Auction Listing" as its listing type first.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -710,6 +731,53 @@ export default function SellerDashboard() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Listing Type *
+                </label>
+                <div className="flex gap-4 mt-3">
+                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isAuctionProduct"
+                      value="false"
+                      checked={form.isAuctionProduct === 'false'}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"
+                    />
+                    Direct Sale (Shop)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isAuctionProduct"
+                      value="true"
+                      checked={form.isAuctionProduct === 'true'}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"
+                    />
+                    Auction Listing
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Stock Quantity *
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={form.quantity}
+                  onChange={handleInputChange}
+                  placeholder="1"
+                  min="0"
+                  disabled={form.isAuctionProduct === 'true'}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:bg-gray-100 disabled:text-gray-400"
+                  required
+                />
+              </div>
+
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description *
@@ -839,6 +907,24 @@ export default function SellerDashboard() {
                         <p className="mt-2 text-lg font-bold text-red-600">
                           Rs. {parseFloat(product.price).toFixed(2)}
                         </p>
+                        <div className="mt-2.5 mb-3 flex flex-wrap gap-2">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            product.isAuctionProduct 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {product.isAuctionProduct ? 'Auction Only' : 'Direct Sale'}
+                          </span>
+                          {!product.isAuctionProduct && (
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                              product.quantity > 0 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800 animate-pulse'
+                            }`}>
+                              {product.quantity > 0 ? `Stock: ${product.quantity}` : 'Out of Stock'}
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-2 text-sm text-gray-600 line-clamp-2">
                           {product.description}
                         </p>

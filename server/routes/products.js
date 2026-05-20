@@ -26,11 +26,24 @@ const getUploadedImages = async (files) => {
 
 router.get('/', async (req, res) => {
   try {
-    const { sellerEmail, category, search, price, sort } = req.query;
+    const { sellerEmail, category, search, price, sort, isAuctionProduct, all } = req.query;
     const filter = {};
 
     if (sellerEmail) {
       filter.sellerEmail = new RegExp(sellerEmail, 'i');
+    }
+
+    if (isAuctionProduct !== undefined) {
+      filter.isAuctionProduct = isAuctionProduct === 'true';
+    } else if (all !== 'true') {
+      filter.isAuctionProduct = { $ne: true };
+    }
+
+    if (all !== 'true') {
+      filter.$or = [
+        { quantity: { $gt: 0 } },
+        { quantity: { $exists: false } }
+      ];
     }
 
     if (category) {
@@ -132,7 +145,7 @@ router.post('/upload', verifyToken, upload.fields([{ name: 'images', maxCount: 5
       return res.status(403).json({ message: 'Only sellers and admins can add products' });
     }
 
-    const { title, description, price, category, style, medium, tags } = req.body;
+    const { title, description, price, category, style, medium, tags, quantity, isAuctionProduct } = req.body;
     const files = [...(req.files?.images || []), ...(req.files?.image || [])];
 
     if (!title || !description || !price || files.length === 0) {
@@ -163,6 +176,8 @@ router.post('/upload', verifyToken, upload.fields([{ name: 'images', maxCount: 5
       priceNumber: Number(normalized),
       images: imageUrls,
       sellerEmail: req.user.email,
+      quantity: quantity !== undefined ? Number(quantity) : 1,
+      isAuctionProduct: isAuctionProduct === 'true',
     });
 
     res.status(201).json(product);
@@ -183,7 +198,7 @@ router.put('/:id', verifyToken, upload.fields([{ name: 'images', maxCount: 5 }, 
       return res.status(403).json({ message: 'Not authorized to update this product' });
     }
 
-    const { title, description, price, category, style, medium, tags, removeImages } = req.body;
+    const { title, description, price, category, style, medium, tags, removeImages, quantity, isAuctionProduct } = req.body;
     const updates = {};
 
     if (title) updates.title = title;
@@ -191,6 +206,8 @@ router.put('/:id', verifyToken, upload.fields([{ name: 'images', maxCount: 5 }, 
     if (category) updates.category = category;
     if (style !== undefined) updates.style = style;
     if (medium !== undefined) updates.medium = medium;
+    if (quantity !== undefined) updates.quantity = Number(quantity);
+    if (isAuctionProduct !== undefined) updates.isAuctionProduct = isAuctionProduct === 'true';
     if (tags !== undefined) {
       updates.tags = typeof tags === 'string'
         ? tags.split(',').map((t) => t.trim()).filter(Boolean)
