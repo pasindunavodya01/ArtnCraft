@@ -15,16 +15,33 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('ecommerce-cart', JSON.stringify(cart));
-    // sync to server for logged-in users
-    if (user && !skipSyncRef.current) {
-      try {
-        api.put('/cart', { items: cart.map(toServerCartItem) }).catch((err) => console.warn('Cart sync failed', err));
-      } catch (e) {
-        console.warn('Cart sync error', e);
+    if (user) {
+      localStorage.setItem('ecommerce-cart-owner', user.email);
+      // sync to server for logged-in users
+      if (!skipSyncRef.current) {
+        try {
+          api.put('/cart', { items: cart.map(toServerCartItem) }).catch((err) => console.warn('Cart sync failed', err));
+        } catch (e) {
+          console.warn('Cart sync error', e);
+        }
       }
+    } else {
+      localStorage.setItem('ecommerce-cart-owner', 'guest');
     }
     if (skipSyncRef.current) skipSyncRef.current = false;
-  }, [cart]);
+  }, [cart, user?.email]);
+
+  const prevUserEmailRef = useRef(user?.email);
+
+  // when user logs out, clear the local cart
+  useEffect(() => {
+    if (prevUserEmailRef.current && !user?.email) {
+      skipSyncRef.current = true;
+      setCart([]);
+      localStorage.setItem('ecommerce-cart-owner', 'guest');
+    }
+    prevUserEmailRef.current = user?.email;
+  }, [user?.email]);
 
   const addToCart = (product) => {
     setCart((prev) => {
@@ -51,8 +68,46 @@ export function CartProvider({ children }) {
     try {
       const res = await api.get('/cart');
       const serverItems = (res.data?.items || []).map(normalizeCartItem);
-      skipSyncRef.current = true;
-      setCart(serverItems);
+
+      const currentOwner = localStorage.getItem('ecommerce-cart-owner');
+
+      if (currentOwner === 'guest') {
+        setCart((prevCart) => {
+          // Merge local guest items into server items
+          const merged = [...serverItems];
+          let hasNewMerges = false;
+
+          if (prevCart && prevCart.length > 0) {
+            prevCart.forEach((localItem) => {
+              const existingIndex = merged.findIndex((item) => String(item._id) === String(localItem._id));
+              if (existingIndex > -1) {
+                const combinedQty = (merged[existingIndex].quantity || 1) + (localItem.quantity || 1);
+                merged[existingIndex] = {
+                  ...merged[existingIndex],
+                  quantity: combinedQty
+                };
+                hasNewMerges = true;
+              } else {
+                merged.push(localItem);
+                hasNewMerges = true;
+              }
+            });
+          }
+
+          if (!hasNewMerges) {
+            skipSyncRef.current = true;
+          } else {
+            // Merged guest items, sync to server
+            skipSyncRef.current = false;
+          }
+
+          return merged;
+        });
+      } else {
+        // Direct overwrite, skip immediate redundant sync
+        skipSyncRef.current = true;
+        setCart(serverItems);
+      }
     } catch (err) {
       console.warn('Unable to load server cart', err);
     }
