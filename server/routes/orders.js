@@ -3,6 +3,7 @@ import multer from 'multer';
 import Stripe from 'stripe';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Cart from '../models/Cart.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 import cloudinary from '../utils/cloudinary.js';
 
@@ -98,6 +99,9 @@ router.post('/checkout', verifyToken, upload.array('receipts', 5), async (req, r
       receiptUrls,
       sellerApprovals
     });
+
+    // Clear user's cart in DB upon successful order creation
+    await Cart.findOneAndUpdate({ userEmail: req.user.email }, { items: [] });
 
     res.status(201).json(order);
   } catch (error) {
@@ -311,6 +315,8 @@ router.post('/stripe-confirm', verifyToken, async (req, res) => {
     });
 
     await decreaseProductStock(order);
+    // Clear user's cart in DB upon successful Stripe payment confirmation
+    await Cart.findOneAndUpdate({ userEmail: req.user.email }, { items: [] });
     res.status(201).json(order);
   } catch (error) {
     console.error(error);

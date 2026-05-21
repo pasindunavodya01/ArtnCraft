@@ -129,32 +129,32 @@ export default function Checkout() {
               <div className="mt-6">
                 <p className="text-sm font-medium text-gray-700 mb-2">Payment Method</p>
                 <div className="space-y-3">
-                  <label className="flex items-center gap-3 rounded-lg border border-gray-300 p-3">
+                  <label className="flex items-center gap-3 rounded-lg border border-gray-300 p-3 text-gray-900 cursor-pointer hover:bg-gray-50 transition">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value="bank-slip"
                       checked={paymentMethod === 'bank-slip'}
                       onChange={() => setPaymentMethod('bank-slip')}
-                      className="h-4 w-4 text-red-600"
+                      className="h-4 w-4 text-red-600 focus:ring-red-500"
                     />
-                    <span>
+                    <span className="text-sm font-medium text-gray-900">
                       Bank slip / screenshot upload<br />
-                      <span className="text-xs text-gray-500">Upload proof after payment and wait for seller approval.</span>
+                      <span className="text-xs text-gray-500 font-normal">Upload proof after payment and wait for seller approval.</span>
                     </span>
                   </label>
-                  <label className="flex items-center gap-3 rounded-lg border border-gray-300 p-3">
+                  <label className="flex items-center gap-3 rounded-lg border border-gray-300 p-3 text-gray-900 cursor-pointer hover:bg-gray-50 transition">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value="stripe"
                       checked={paymentMethod === 'stripe'}
                       onChange={() => setPaymentMethod('stripe')}
-                      className="h-4 w-4 text-red-600"
+                      className="h-4 w-4 text-red-600 focus:ring-red-500"
                     />
-                    <span>
+                    <span className="text-sm font-medium text-gray-900">
                       Credit / debit card (Stripe)<br />
-                      <span className="text-xs text-gray-500">Secure checkout with card payment.</span>
+                      <span className="text-xs text-gray-500 font-normal">Secure checkout with card payment.</span>
                     </span>
                   </label>
                 </div>

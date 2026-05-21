@@ -61,7 +61,18 @@ export function CartProvider({ children }) {
     setCart((prev) => prev.map((item) => item._id === id ? { ...item, quantity: Math.max(1, quantity) } : item));
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = async () => {
+    skipSyncRef.current = true;
+    setCart([]);
+    localStorage.removeItem('ecommerce-cart');
+    if (user?.email) {
+      try {
+        await api.delete('/cart');
+      } catch (err) {
+        console.warn('Unable to clear server cart:', err);
+      }
+    }
+  };
 
   const refreshCart = async () => {
     if (!user?.email) return;

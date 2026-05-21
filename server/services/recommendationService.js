@@ -183,7 +183,13 @@ export async function getRecommendationsForUser(userEmail, { limit = 12, exclude
   const excludeIds = new Set(purchasedIds);
   if (excludeProductId) excludeIds.add(String(excludeProductId));
 
-  let candidates = await Product.find({}).sort({ createdAt: -1 }).limit(200);
+  let candidates = await Product.find({
+    isAuctionProduct: { $ne: true },
+    $or: [
+      { quantity: { $gt: 0 } },
+      { quantity: { $exists: false } }
+    ]
+  }).sort({ createdAt: -1 }).limit(200);
   candidates = await enrichWithRatings(candidates);
 
   if (activityCount === 0) {
@@ -196,7 +202,7 @@ export async function getRecommendationsForUser(userEmail, { limit = 12, exclude
 
   const profile = buildPreferenceProfile(interactedProducts);
 
-  const scored = candidates
+  let scored = candidates
     .map((product) => ({
       product,
       score: scoreProduct(product, profile, excludeIds),
@@ -204,11 +210,28 @@ export async function getRecommendationsForUser(userEmail, { limit = 12, exclude
     }))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
     .map((entry) => ({
       ...entry.product,
       recommendationScore: Number(entry.score.toFixed(2)),
     }));
+
+  // Backfill with popular/new products if the personalized score list is shorter than target limit
+  if (scored.length < limit) {
+    const scoredIds = new Set(scored.map((p) => String(p._id)));
+    const fallbacks = candidates
+      .filter((p) => !excludeIds.has(String(p._id)) && !scoredIds.has(String(p._id)))
+      .sort((a, b) => (b.ratingAvg - a.ratingAvg) || (b.reviewCount - a.reviewCount));
+    
+    const needed = limit - scored.length;
+    const toAdd = fallbacks.slice(0, needed).map((p) => ({
+      ...p,
+      recommendationScore: 0
+    }));
+    
+    scored = [...scored, ...toAdd];
+  }
+
+  scored = scored.slice(0, limit);
 
   const preferences = {
     topCategories: [...profile.categories.entries()]

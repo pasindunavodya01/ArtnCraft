@@ -572,16 +572,16 @@ export default function ProductDetail() {
 
             <form onSubmit={handleReportSubmit} className="mt-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Report Type</label>
+                <label className="block text-sm font-medium text-gray-900">Report Type</label>
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value)}
-                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
+                  className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-600"
                 >
-                  <option value="product_issue">Product Issue</option>
-                  <option value="seller_complaint">Seller Complaint</option>
-                  <option value="technical_error">Technical Error</option>
-                  <option value="other">Other</option>
+                  <option className="text-gray-900" value="product_issue">Product Issue</option>
+                  <option className="text-gray-900" value="seller_complaint">Seller Complaint</option>
+                  <option className="text-gray-900" value="technical_error">Technical Error</option>
+                  <option className="text-gray-900" value="other">Other</option>
                 </select>
               </div>
 

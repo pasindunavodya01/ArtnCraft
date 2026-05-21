@@ -1,10 +1,64 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Gavel, ArrowRight } from 'lucide-react';
+import { Gavel, ArrowRight, Clock } from 'lucide-react';
 import api from '../services/api.js';
 import ProductCard from '../components/ProductCard.jsx';
 import { useCart } from '../contexts/CartContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
+
+function CountdownTimer({ endTime, status, startTime }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const now = new Date();
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+
+      if (status === 'pending' && start > now) {
+        const diff = start - now;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((diff / (1000 * 60)) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
+        setTimeLeft(`Starts in: ${days > 0 ? `${days}d ` : ''}${hours}h ${mins}m ${secs}s`);
+      } else if (now > end || status === 'ended') {
+        setTimeLeft('Ended');
+      } else {
+        const diff = end - now;
+        if (diff <= 0) {
+          setTimeLeft('Ended');
+          return;
+        }
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((diff / (1000 * 60)) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
+        setTimeLeft(`${days > 0 ? `${days}d ` : ''}${hours}h ${mins}m ${secs}s left`);
+      }
+    };
+
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, [endTime, startTime, status]);
+
+  const isEnded = timeLeft === 'Ended';
+  const isUpcoming = timeLeft.startsWith('Starts in:');
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+      isEnded
+        ? 'bg-gray-100 text-gray-500'
+        : isUpcoming
+          ? 'bg-amber-50 text-amber-700'
+          : 'bg-emerald-50 text-emerald-700 border border-emerald-100 animate-pulse'
+    }`}>
+      <Clock size={10} />
+      {timeLeft}
+    </span>
+  );
+}
 
 export default function Homepage() {
   const [products, setProducts] = useState([]);
@@ -14,6 +68,8 @@ export default function Homepage() {
   const [recLoading, setRecLoading] = useState(false);
   const [preferences, setPreferences] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [liveAuctions, setLiveAuctions] = useState([]);
+  const [auctionsLoading, setAuctionsLoading] = useState(true);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,6 +137,21 @@ export default function Homepage() {
     loadRecommendations();
   }, [user?.email, role]);
 
+  useEffect(() => {
+    const loadLiveAuctions = async () => {
+      try {
+        setAuctionsLoading(true);
+        const response = await api.get('/auctions?status=active');
+        setLiveAuctions(response.data.slice(0, 2));
+      } catch (err) {
+        console.warn('Unable to load live auctions for homepage hero.', err);
+      } finally {
+        setAuctionsLoading(false);
+      }
+    };
+    loadLiveAuctions();
+  }, []);
+
   const handleAdd = (product) => addToCart(product);
 
   const handleFilterSubmit = (event) => {
@@ -141,30 +212,95 @@ export default function Homepage() {
                 )}
               </div>
             </div>
-            <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-xl border border-red-100 flex flex-col justify-between">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-ping" />
-                  Live Auctions Arena
-                </span>
-                <h3 className="mt-4 text-2xl font-black text-gray-900 leading-tight">
-                  Bid Real-Time on Handcrafted Masterpieces
-                </h3>
-                <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                  Join dynamic live auctions for premium, one-of-a-kind local creations. Connect directly with independent creators and place your winning bid today.
-                </p>
+            {!auctionsLoading && liveAuctions.length > 0 ? (
+              <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-xl border border-red-100 flex flex-col justify-between h-full min-h-[350px]">
+                <div>
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-ping" />
+                      Live Bidding Arena
+                    </span>
+                    <Link
+                      to="/auctions"
+                      className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-0.5 group transition"
+                    >
+                      View All <ArrowRight size={12} className="group-hover:translate-x-0.5 transition duration-300" />
+                    </Link>
+                  </div>
+
+                  <div className="space-y-3">
+                    {liveAuctions.map((auction) => {
+                      const product = auction.productId;
+                      if (!product) return null;
+                      return (
+                        <Link
+                          key={auction._id}
+                          to={`/auctions/${auction._id}`}
+                          className="group flex gap-3 p-2.5 rounded-2xl border border-gray-100 hover:border-red-200 hover:bg-red-50/20 transition duration-300"
+                        >
+                          <img
+                            src={product.images?.[0] || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2YzZjRmNiIvPjwvc3ZnPg=='}
+                            alt={product.title}
+                            className="h-14 w-14 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                            <h4 className="text-xs font-bold text-gray-900 truncate group-hover:text-red-600 transition">
+                              {product.title}
+                            </h4>
+                            <div className="flex items-center justify-between gap-2 mt-1">
+                              <span className="text-xs font-black text-red-600">
+                                Rs. {(auction.highestBid > 0 ? auction.highestBid : auction.startingBid).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                              <CountdownTimer
+                                endTime={auction.endTime}
+                                status={auction.status}
+                                startTime={auction.startTime}
+                              />
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <Link
+                    to="/auctions"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 px-6 py-3.5 font-bold text-white transition duration-300 hover:from-red-700 hover:to-red-800 active:scale-95 shadow-md shadow-red-600/10 group text-sm"
+                  >
+                    <Gavel size={16} className="group-hover:rotate-12 transition duration-300" />
+                    Enter Bidding Arena
+                    <ArrowRight size={14} className="group-hover:translate-x-1 transition duration-300" />
+                  </Link>
+                </div>
               </div>
-              <div className="mt-8">
-                <Link
-                  to="/auctions"
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 font-bold text-white transition duration-300 hover:from-red-700 hover:to-red-800 active:scale-95 shadow-md shadow-red-600/10 group"
-                >
-                  <Gavel size={18} className="group-hover:rotate-12 transition duration-300" />
-                  Enter Bidding Arena
-                  <ArrowRight size={16} className="group-hover:translate-x-1 transition duration-300" />
-                </Link>
+            ) : (
+              <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-xl border border-red-100 flex flex-col justify-between h-full min-h-[350px]">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-ping" />
+                    Live Auctions Arena
+                  </span>
+                  <h3 className="mt-4 text-2xl font-black text-gray-900 leading-tight">
+                    Bid Real-Time on Handcrafted Masterpieces
+                  </h3>
+                  <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                    Join dynamic live auctions for premium, one-of-a-kind local creations. Connect directly with independent creators and place your winning bid today.
+                  </p>
+                </div>
+                <div className="mt-8">
+                  <Link
+                    to="/auctions"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 font-bold text-white transition duration-300 hover:from-red-700 hover:to-red-800 active:scale-95 shadow-md shadow-red-600/10 group"
+                  >
+                    <Gavel size={18} className="group-hover:rotate-12 transition duration-300" />
+                    Enter Bidding Arena
+                    <ArrowRight size={16} className="group-hover:translate-x-1 transition duration-300" />
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
