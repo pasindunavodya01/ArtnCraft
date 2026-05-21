@@ -552,7 +552,7 @@ export default function ProductDetail() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-red-600"></span>
-                  Multiple gallery images for better preview
+                   Recommendations based on your views, wishlist, cart, and purchases 
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-red-600"></span>
@@ -592,7 +592,7 @@ export default function ProductDetail() {
                   value={reportSubject}
                   onChange={(e) => setReportSubject(e.target.value)}
                   placeholder="Brief subject line"
-                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
+                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
                   required
                 />
               </div>
@@ -604,7 +604,7 @@ export default function ProductDetail() {
                   onChange={(e) => setReportDescription(e.target.value)}
                   placeholder="Provide details about the issue..."
                   rows="4"
-                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
+                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
                   required
                 />
               </div>
