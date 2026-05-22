@@ -1,102 +1,106 @@
-# React + Express Full-Stack Application
+# ArtNcraft E-Commerce Platform
 
-A full-stack web application with a React frontend and Express backend.
+This project is a full-stack e-commerce platform for art and craft products, featuring user authentication, product management, auctions, cart, orders, reviews, wishlists, and admin/seller dashboards. It is built with a React frontend and a Node.js/Express backend, using Firebase for authentication Cloudinary for image storage, and Stripe for payments.
+
+## Features
+
+### User Features
+- **Authentication**: Register, login, and manage accounts with Firebase Auth
+- **Product Browsing**: View products, search, and filter
+- **Product Details**: See detailed product info, images, and reviews
+- **Cart Management**: Add, update, and remove items from cart
+- **Wishlist**: Add/remove products to wishlist
+- **Checkout & Payment**: Secure checkout with Stripe integration
+- **Order Management**: View order history and order details
+- **Auctions**: Participate in live auctions, bid on products, view auction details
+- **Reviews**: Submit and view product reviews
+- **Account Management**: Update profile, view account info
+
+### Seller Features
+- **Seller Dashboard**: Manage own products and auctions
+- **Product Management**: Add, edit, delete products
+- **Auction Management**: Create and manage auctions for products
+- **Order Management**: View orders for own products
+
+### Admin Features
+- **Admin Dashboard**: Overview of platform activity
+- **User Management**: View, edit, and remove users
+- **Product & Auction Oversight**: Manage all products and auctions
+- **Reports & Analytics**: View reports, handle user reports
+- **Recommendation System**: Manage and view recommendations
+
+### Additional Features
+- **Recommendation System**: Personalized product recommendations
+- **Cloudinary Integration**: Image uploads and management
+- **Firebase Admin**: Secure backend operations
+- **Tailwind CSS**: Modern, responsive UI
+- **Vite**: Fast frontend development
 
 ## Project Structure
 
 ```
-APP/
-├── client/          # React frontend (Vite)
-│   ├── src/
-│   ├── .env
-│   ├── .gitignore
-│   ├── package.json
-│   └── vite.config.js
-├── server/          # Express backend
-│   ├── .env
-│   ├── .gitignore
-│   ├── index.js
-│   └── package.json
-└── .gitignore
+client/           # React frontend
+  src/
+    components/   # Reusable UI components
+    contexts/     # React context providers (Auth, Cart)
+    pages/        # Main app pages (Home, Product, Cart, etc.)
+    services/     # API service layer
+    utils/        # Utility functions
+  ...
+
+server/           # Node.js/Express backend
+  models/         # Mongoose models
+  routes/         # Express routes
+  middleware/     # Auth and admin middleware
+  services/       # Business logic (auctions, recommendations)
+  scripts/        # Seed and utility scripts
+  utils/          # Utility modules (cloudinary, firebase)
+  ...
 ```
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v16 or higher)
+- Node.js (v16+ recommended)
 - npm or yarn
+- Firebase project & credentials
+- Stripe account & keys
+- Cloudinary account (for image uploads)
 
-### Installation
-
-1. **Install server dependencies:**
-   ```bash
+### Setup
+1. Clone the repository
+2. Install dependencies in both `client` and `server` folders:
+   ```sh
+   cd client && npm install
+   cd ../server && npm install
+   ```
+3. Set up environment variables (see `.env.example` in both folders)
+4. Start the backend:
+   ```sh
    cd server
-   npm install
+   npm start
    ```
-
-2. **Install client dependencies:**
-   ```bash
-   cd ../client
-   npm install
-   ```
-
-### Running the Application
-
-1. **Start the server:**
-   ```bash
-   cd server
-   npm run dev
-   ```
-   Server runs on `http://localhost:5000`
-
-2. **In another terminal, start the client:**
-   ```bash
+5. Start the frontend:
+   ```sh
    cd client
    npm run dev
    ```
-   Client runs on `http://localhost:3000`
 
-## Environment Variables
+## Scripts
+- `client/`
+  - `npm run dev` — Start React frontend (Vite)
+- `server/`
+  - `npm start` — Start backend server
+  - `npm run seed` — Seed database with sample data
 
-### Client (.env)
-- `VITE_API_URL=http://localhost:5000/api` - API base URL
-- `VITE_FIREBASE_API_KEY` - Firebase web API key
-- `VITE_FIREBASE_AUTH_DOMAIN` - Firebase auth domain
-- `VITE_FIREBASE_PROJECT_ID` - Firebase project ID
-- `VITE_FIREBASE_STORAGE_BUCKET` - Firebase storage bucket
-- `VITE_FIREBASE_MESSAGING_SENDER_ID` - Firebase sender ID
-- `VITE_FIREBASE_APP_ID` - Firebase app ID
+## Technologies Used
+- **Frontend**: React, Vite, Tailwind CSS
+- **Backend**: Node.js, Express, MongoDB, Mongoose
+- **Authentication**: Firebase Auth
+- **Payments**: Stripe
+- **Image Storage**: Cloudinary
+- **Other**: JWT, REST API, Context API
 
-### Server (.env)
-- `PORT=5000` - Server port
-- `MONGO_URI` - MongoDB Atlas connection string
-- `JWT_SECRET` - JWT secret key used for API auth
-- `CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name
-- `CLOUDINARY_API_KEY` - Cloudinary API key
-- `CLOUDINARY_API_SECRET` - Cloudinary API secret
+## License
 
-## Available Scripts
-
-### Server
-- `npm run dev` - Start development server with auto-reload
-- `npm start` - Start production server
-
-### Client
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-
-## Features
-
-- CORS enabled for client-server communication
-- Vite for fast client-side development
-- Express with dotenv for environment management
-- Modular folder structure for easy scaling
-
-## Next Steps
-
-- Add authentication (JWT, OAuth, etc.)
-- Connect to a database (MongoDB, PostgreSQL, etc.)
-- Add middleware for logging and error handling
-- Implement API routes and business logic
-- Add form validation and error handling
+This project is for educational purposes. See LICENSE for details.

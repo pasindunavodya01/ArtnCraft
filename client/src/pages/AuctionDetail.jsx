@@ -481,7 +481,7 @@ export default function AuctionDetail() {
                       >
                         <div>
                           <p className="flex items-center gap-1">
-                            {bid.buyerName || bid.buyerEmail.split('@')[0]}
+                            {bid.buyerName || bid.buyerEmail?.split('@')[0] || 'Anonymous'} 
                             {isBidderEmailMe && (
                               <span className="text-[9px] bg-red-100 text-red-700 border border-red-200 rounded px-1 font-semibold">
                                 You
