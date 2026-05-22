@@ -26,24 +26,11 @@ const getUploadedImages = async (files) => {
 
 router.get('/', async (req, res) => {
   try {
-    const { sellerEmail, category, search, price, sort, isAuctionProduct, all } = req.query;
+    const { sellerEmail, category, search, price, sort } = req.query;
     const filter = {};
 
     if (sellerEmail) {
       filter.sellerEmail = new RegExp(sellerEmail, 'i');
-    }
-
-    if (isAuctionProduct !== undefined) {
-      filter.isAuctionProduct = isAuctionProduct === 'true';
-    } else if (all !== 'true') {
-      filter.isAuctionProduct = { $ne: true };
-    }
-
-    if (all !== 'true') {
-      filter.$or = [
-        { quantity: { $gt: 0 } },
-        { quantity: { $exists: false } }
-      ];
     }
 
     if (category) {
@@ -56,9 +43,6 @@ router.get('/', async (req, res) => {
         { title: regex },
         { description: regex },
         { category: regex },
-        { style: regex },
-        { medium: regex },
-        { tags: regex },
         { sellerEmail: regex },
       ];
     }
@@ -153,9 +137,6 @@ router.post('/upload', verifyToken, upload.fields([{ name: 'images', maxCount: 5
     }
 
     const imageUrls = await getUploadedImages(files);
-    const parsedTags = typeof tags === 'string'
-      ? tags.split(',').map((t) => t.trim()).filter(Boolean)
-      : Array.isArray(tags) ? tags.map((t) => String(t).trim()).filter(Boolean) : [];
 
     // normalize price to string with two decimals and store numeric copy
     const normalizePrice = (val) => {
@@ -165,19 +146,34 @@ router.post('/upload', verifyToken, upload.fields([{ name: 'images', maxCount: 5
     };
 
     const normalized = normalizePrice(price);
+    
+    // Parse tags if it's a string or array
+    let parsedTags = [];
+    if (tags) {
+      if (typeof tags === 'string') {
+        try {
+          parsedTags = JSON.parse(tags);
+        } catch {
+          parsedTags = tags.split(',').map(t => t.trim()).filter(t => t);
+        }
+      } else if (Array.isArray(tags)) {
+        parsedTags = tags;
+      }
+    }
+    
     const product = await Product.create({
       title,
       description,
       category: category || 'General',
-      style: style || '',
-      medium: medium || '',
-      tags: parsedTags,
       price: normalized,
       priceNumber: Number(normalized),
       images: imageUrls,
       sellerEmail: req.user.email,
-      quantity: quantity !== undefined ? Number(quantity) : 1,
-      isAuctionProduct: isAuctionProduct === 'true',
+      style: style || '',
+      medium: medium || '',
+      tags: parsedTags,
+      quantity: quantity || 1,
+      isAuctionProduct: isAuctionProduct === 'true' || false,
     });
 
     res.status(201).json(product);
@@ -198,21 +194,12 @@ router.put('/:id', verifyToken, upload.fields([{ name: 'images', maxCount: 5 }, 
       return res.status(403).json({ message: 'Not authorized to update this product' });
     }
 
-    const { title, description, price, category, style, medium, tags, removeImages, quantity, isAuctionProduct } = req.body;
+    const { title, description, price, category, removeImages, style, medium, tags, quantity, isAuctionProduct } = req.body;
     const updates = {};
 
     if (title) updates.title = title;
     if (description) updates.description = description;
     if (category) updates.category = category;
-    if (style !== undefined) updates.style = style;
-    if (medium !== undefined) updates.medium = medium;
-    if (quantity !== undefined) updates.quantity = Number(quantity);
-    if (isAuctionProduct !== undefined) updates.isAuctionProduct = isAuctionProduct === 'true';
-    if (tags !== undefined) {
-      updates.tags = typeof tags === 'string'
-        ? tags.split(',').map((t) => t.trim()).filter(Boolean)
-        : Array.isArray(tags) ? tags.map((t) => String(t).trim()).filter(Boolean) : [];
-    }
     if (price) {
       const normalizePrice = (val) => {
         const n = parseFloat(String(val).replace(/,/g, '.'));
@@ -223,6 +210,23 @@ router.put('/:id', verifyToken, upload.fields([{ name: 'images', maxCount: 5 }, 
       updates.price = normalized;
       updates.priceNumber = Number(normalized);
     }
+    if (style !== undefined) updates.style = style;
+    if (medium !== undefined) updates.medium = medium;
+    if (tags !== undefined) {
+      let parsedTags = [];
+      if (typeof tags === 'string') {
+        try {
+          parsedTags = JSON.parse(tags);
+        } catch {
+          parsedTags = tags.split(',').map(t => t.trim()).filter(t => t);
+        }
+      } else if (Array.isArray(tags)) {
+        parsedTags = tags;
+      }
+      updates.tags = parsedTags;
+    }
+    if (quantity !== undefined) updates.quantity = quantity;
+    if (isAuctionProduct !== undefined) updates.isAuctionProduct = isAuctionProduct === 'true' || isAuctionProduct === true;
 
     let remainingImages = [...product.images];
     if (removeImages) {

@@ -15,6 +15,9 @@ export default function SellerDashboard() {
     description: '',
     category: '',
     price: '',
+    style: '',
+    medium: '',
+    tags: '',
     images: [],
     existingImages: [],
     removedImages: [],
@@ -119,6 +122,9 @@ export default function SellerDashboard() {
       description: product.description,
       category: product.category,
       price: product.price,
+      style: product.style || '',
+      medium: product.medium || '',
+      tags: Array.isArray(product.tags) ? product.tags.join(', ') : (product.tags || ''),
       images: [],
       existingImages: product.images || [],
       removedImages: [],
@@ -145,6 +151,9 @@ export default function SellerDashboard() {
       description: '',
       category: '',
       price: '',
+      style: '',
+      medium: '',
+      tags: '',
       images: [],
       existingImages: [],
       removedImages: [],
@@ -182,6 +191,11 @@ export default function SellerDashboard() {
       formData.append('price', form.price);
       formData.append('quantity', form.quantity || '1');
       formData.append('isAuctionProduct', form.isAuctionProduct || 'false');
+      formData.append('style', form.style);
+      formData.append('medium', form.medium);
+      // Convert comma-separated tags to array
+      const tagsArray = form.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      formData.append('tags', JSON.stringify(tagsArray));
       form.images.forEach((image) => formData.append('images', image));
       if (form.removedImages.length) {
         formData.append('removeImages', JSON.stringify(form.removedImages));
@@ -775,6 +789,48 @@ export default function SellerDashboard() {
                   disabled={form.isAuctionProduct === 'true'}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:bg-gray-100 disabled:text-gray-400"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Style
+                </label>
+                <input
+                  type="text"
+                  name="style"
+                  value={form.style}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Modern, Vintage, Contemporary"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Medium
+                </label>
+                <input
+                  type="text"
+                  name="medium"
+                  value={form.medium}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Acrylic, Oil, Watercolor"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tags
+                </label>
+                <input
+                  type="text"
+                  name="tags"
+                  value={form.tags}
+                  onChange={handleInputChange}
+                  placeholder="e.g., handmade, limited edition, personalized"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
 
