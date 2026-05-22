@@ -99,8 +99,5 @@ server/           # Node.js/Express backend
 - **Authentication**: Firebase Auth
 - **Payments**: Stripe
 - **Image Storage**: Cloudinary
-- **Other**: JWT, REST API, Context API
+- **Other**: REST API, Context API
 
-## License
-
-This project is for educational purposes. See LICENSE for details.
