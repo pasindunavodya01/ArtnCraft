@@ -196,7 +196,7 @@ export default function Homepage() {
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
               <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Support Local Artisans & Crafters</h1>
-              <p className="mt-4 text-lg text-red-50">Discover unique, handcrafted items from self-employed painters, hand crafters, and independent artists.</p>
+              <p className="mt-4 text-lg text-red-50">Discover unique, handcrafted items from painters, hand crafters, and independent artists.</p>
               <p className="mt-2 text-sm text-red-100">Shop directly from creators and empower local businesses today.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a href="#products" className="rounded-md bg-white px-6 py-3 font-bold text-red-600 transition hover:bg-gray-50">
@@ -344,7 +344,7 @@ export default function Homepage() {
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-3xl font-bold text-gray-900">Featured Local Creations</h2>
-              <p className="mt-2 text-gray-600">Discover unique items made by self-employed creators</p>
+              <p className="mt-2 text-gray-600">Discover unique items made by local artists and creators</p>
             </div>
             <form onSubmit={handleFilterSubmit} className="grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr_1fr_1fr] w-full max-w-7xl">
               <input

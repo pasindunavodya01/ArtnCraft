@@ -707,7 +707,7 @@ export default function SellerDashboard() {
                   name="title"
                   value={form.title}
                   onChange={handleInputChange}
-                  placeholder="e.g., Premium Wireless Headphones"
+                  placeholder="e.g., Handmade Clay Pot"
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   required
                 />
@@ -722,7 +722,7 @@ export default function SellerDashboard() {
                   name="category"
                   value={form.category}
                   onChange={handleInputChange}
-                  placeholder="e.g., Electronics"
+                  placeholder="e.g., Home & Garden"
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   required
                 />
